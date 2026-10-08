@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}LOTO Permits — LOTO / SWP{% endblock %}
+
+{% block content %}
+<div class="logs">
+  <div class="logs-header">
+    <h2>LOTO Permits</h2>
+    {% if not is_view_only %}
+    <a href="{{ url_for('loto.new') }}" class="btn-primary" style="width:auto;">+ New LOTO</a>
+    {% endif %}
+  </div>
+
+  <div class="tab-bar">
+    {% if not is_view_only %}
+    <a href="{{ url_for('loto.index', show='drafts') }}"
+       class="tab {{ 'tab-active' if show == 'drafts' }}">Drafts</a>
+    {% if is_admin or is_operator %}
+    <a href="{{ url_for('loto.index', show='pending_operator') }}"
+       class="tab {{ 'tab-active' if show == 'pending_operator' }}">Operator Review</a>
+    {% endif %}
+    <a href="{{ url_for('loto.index', show='pending') }}"
+       class="tab {{ 'tab-active' if show == 'pending' }}">Mgmt Review</a>
+    {% endif %}
+    <a href="{{ url_for('loto.index', show='active') }}"
+       class="tab {{ 'tab-active' if show == 'active' }}">Active</a>
+    <a href="{{ url_for('loto.index', show='released') }}"
+       class="tab {{ 'tab-active' if show == 'released' }}">Released</a>
+    {% if not is_view_only %}
+    <a href="{{ url_for('loto.index', show='all') }}"
+       class="tab {{ 'tab-active' if show == 'all' }}">All</a>
+    {% endif %}
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>LOTO #</th>
+          <th>Plant</th>
+          <th>Date</th>
+          <th>Location</th>
+          <th>Equipment</th>
+          <th>SWP</th>
+          <th>Status</th>
+          <th>Created By</th>
+          <th>Entered</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in lotos %}
+        <tr>
+          <td class="td-mono">
+            {% if l.loto_number %}{{ l.loto_number }}
+            {% elif l.number_deferred %}<span style="color:var(--muted);font-style:italic;">pending</span>
+            {% else %}—{% endif %}
+            {% if l.is_historical %}
+            <span class="badge badge-historical" title="Historical record">Historical</span>
+            {% endif %}
+          </td>
+          <td>{{ l.plant or '—' }}</td>
+          <td>{{ l.date or '—' }}</td>
+          <td>{{ l.location or '—' }}</td>
+          <td>{{ l.equipment_description or '—' }}</td>
+          <td class="td-mono">
+            {% if l.swp_number %}
+              <a href="{{ url_for('swp.review', swp_id=l.swp_id) }}" style="color:var(--border-lt)">{{ l.swp_number }}</a>
+            {% else %}—{% endif %}
+          </td>
+          <td><span class="badge badge-loto-{{ l.status }}">{{ l.status | title }}</span></td>
+          <td>{{ (l.first_name ~ ' ' ~ l.last_name) if l.first_name else '—' }}</td>
+          <td class="td-mono">{{ l.created_at[:10] if l.created_at else '—' }}</td>
+          <td>
+            {% if l.status == 'draft' and not is_view_only and (is_admin or l.created_by == uid) %}
+              <a href="{{ url_for('loto.edit', loto_id=l.id) }}" class="badge badge-login" preload="mouseover">Edit</a>
+            {% else %}
+              <a href="{{ url_for('loto.edit', loto_id=l.id) }}" class="badge badge-login" preload="mouseover">View</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="10" style="text-align:center; color:var(--muted); padding:2rem;">
+            No LOTOs found.
+            {% if not is_view_only and show in ('active', 'all', 'drafts') %}
+            <a href="{{ url_for('loto.new') }}" style="color:var(--border-lt)">Create one →</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

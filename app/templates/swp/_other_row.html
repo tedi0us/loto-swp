@@ -1,0 +1,7 @@
+<label id="{{ section }}-other2-slot" class="check-item check-with-text" style="grid-column:span 2;">
+  <input type="checkbox" name="{{ prefix }}" id="{{ prefix }}" value="y"{% if checked %} checked{% endif %}>
+  <span>Other:</span>
+  <input type="text" name="{{ prefix }}_txt" id="{{ prefix }}_txt" maxlength="64" placeholder="Specify" value="{{ txt_value }}">
+</label>
+<button id="{{ section }}-add-other-btn" hx-swap-oob="outerHTML"
+        type="button" class="btn-link" style="display:none;"></button>

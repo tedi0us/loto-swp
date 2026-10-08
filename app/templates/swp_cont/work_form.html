@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Work Continuation — SWP #{{ swp.permit_number or swp.id }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <nav class="breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}">Dashboard</a> &rsaquo;
+    <a href="{{ url_for('swp.index') }}">Safe Work Permits</a> &rsaquo;
+    <a href="{{ url_for('swp.review', swp_id=swp.id) }}">SWP #{{ swp.permit_number or swp.id }}</a> &rsaquo;
+    Work Continuation
+  </nav>
+  <h2>SWP-05 — Work Continuation Addendum</h2>
+</div>
+
+<form id="work-cont-form"
+      hx-post="{{ url_for('swp_cont.work_autosave', swp_id=swp.id) }}"
+      hx-trigger="change, input delay:1000ms"
+      hx-target="#save-indicator"
+      hx-swap="outerHTML">
+
+  <input type="hidden" id="cont-id-field" name="cont_id" value="{{ cont.id if cont else '' }}">
+
+  <span id="save-indicator" class="save-indicator"></span>
+
+  <div class="swp-section">
+    <h3 class="section-title">Stop / Restart Cycles</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:2rem">#</th>
+            <th>Type</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>WL Phone</th>
+            <th>WL Name</th>
+            <th>WL Sig</th>
+            <th>Auth Name</th>
+            <th>Auth Sig</th>
+            <th>Comments</th>
+          </tr>
+        </thead>
+        <tbody id="cycle-body">
+          {% for e in entries %}
+          <tr>
+            <td class="td-num">{{ loop.index }}</td>
+            <td>
+              <select name="entry_type_{{ loop.index0 }}">
+                <option value="stop"    {% if e.entry_type == 'stop' %}selected{% endif %}>Stop</option>
+                <option value="restart" {% if e.entry_type == 'restart' %}selected{% endif %}>Restart</option>
+              </select>
+            </td>
+            <td><input type="text" name="date_{{ loop.index0 }}"     value="{{ e.date or '' }}"             maxlength="32"></td>
+            <td><input type="text" name="time_{{ loop.index0 }}"     value="{{ e.time or '' }}"             maxlength="32"></td>
+            <td><input type="text" name="wl_phone_{{ loop.index0 }}" value="{{ e.work_lead_phone or '' }}"  maxlength="32"></td>
+            <td><input type="text" name="wl_name_{{ loop.index0 }}"  value="{{ e.work_lead_name or '' }}"   maxlength="128"></td>
+            <td><input type="text" name="wl_sig_{{ loop.index0 }}"   value="{{ e.work_lead_sig or '' }}"    maxlength="128"></td>
+            <td><input type="text" name="auth_name_{{ loop.index0 }}" value="{{ e.authorizer_name or '' }}" maxlength="128"></td>
+            <td><input type="text" name="auth_sig_{{ loop.index0 }}"  value="{{ e.authorizer_sig or '' }}"  maxlength="128"></td>
+            <td><input type="text" name="comments_{{ loop.index0 }}"  value="{{ e.job_status_comments or '' }}" maxlength="256"></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <input type="hidden" id="next-cycle-idx" name="cycle_idx" value="{{ entries|length }}">
+    <button type="button" class="btn-secondary" style="margin-top:.5rem;width:auto;"
+            hx-get="{{ url_for('swp_cont.work_cycle_row', swp_id=swp.id, cont_id=cont.id if cont else 0) }}"
+            hx-include="#next-cycle-idx"
+            hx-target="#cycle-body"
+            hx-swap="beforeend">
+      + Add Row
+    </button>
+  </div>
+
+</form>
+
+<div class="review-actions" style="margin-top:1.25rem;">
+  <a href="{{ url_for('swp.review', swp_id=swp.id) }}" class="btn-secondary">← Back to SWP</a>
+</div>
+{% endblock %}

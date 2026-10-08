@@ -1,0 +1,5 @@
+-r requirements.txt
+pytest
+pytest-flask
+pytest-cov
+reportlab  # tools/make_templates.py

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}User Created — LOTO / SWP{% endblock %}
+
+{% block content %}
+<div class="login-wrap">
+  <div class="login-card" style="max-width:480px;">
+    <h1>User Created</h1>
+    <p class="subtitle">Provide these credentials to <strong>{{ username }}</strong>. The password will not be shown again.</p>
+
+    <div style="margin:1.5rem 0;">
+      <div class="field">
+        <label style="font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);">Username</label>
+        <div class="temp-pw-value" style="font-size:1.1rem;letter-spacing:.04em;">{{ username }}</div>
+      </div>
+      <div class="field" style="margin-top:1rem;">
+        <label style="font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);">Temporary Password</label>
+        <div class="temp-pw-value">{{ temp_password }}</div>
+      </div>
+    </div>
+
+    <p style="font-size:.82rem;color:var(--muted);margin-bottom:1.5rem;">
+      The user will be prompted to change their password and complete their profile on first login.
+    </p>
+
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+      <a href="{{ url_for('users.new') }}" class="btn-primary" style="width:auto;">Create Another</a>
+      <a href="{{ url_for('users.index') }}" class="btn-secondary" style="width:auto;">Back to Users</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

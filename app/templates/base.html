@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}LOTO / SWP{% endblock %}</title>
+  <script src="{{ url_for('static', filename='htmx.min.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='preload.js') }}" defer></script>
+  <script src="{{ url_for('static', filename='equipment.js') }}" defer></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body hx-ext="preload" hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'>
+  {% if current_user.is_authenticated %}
+  <nav>
+    <span class="nav-brand">LOTO / SWP</span>
+
+    {% set on_dashboard = request.endpoint in ('main.dashboard', 'main.index') %}
+    {% if not on_dashboard %}
+    <a href="{{ url_for('main.dashboard') }}" class="nav-home" aria-label="Home" preload="mouseover">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+    </a>
+    {% endif %}
+
+    <span class="nav-spacer"></span>
+    {% if pending_sig_count %}
+    <a href="{{ url_for('signatures.index') }}" class="nav-sig-badge" title="{{ pending_sig_count }} pending signature{{ 's' if pending_sig_count != 1 }}">
+      {{ pending_sig_count }}
+    </a>
+    {% endif %}
+    <span class="nav-user">{{ current_user.display_name() }}</span>
+    <form method="post" action="{{ url_for('auth.logout') }}" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn-link">Sign out</button>
+    </form>
+  </nav>
+  {% endif %}
+
+  <main>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <span>Safe Work Permit &amp; LOTO Management</span>
+  </footer>
+
+  <dialog id="equipment-dialog" class="equip-dialog">
+    <div class="equip-dialog-inner">
+      <div id="equipment-dialog-body"></div>
+    </div>
+  </dialog>
+
+</body>
+</html>

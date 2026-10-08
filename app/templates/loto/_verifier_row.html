@@ -1,0 +1,10 @@
+<tr id="verifier-row-{{ idx }}">
+  <td class="td-num">{{ idx + 1 }}</td>
+  <td>
+    <input type="text" name="v_name_{{ idx }}" class="td-input"
+           list="person-list" placeholder="Full name">
+  </td>
+  <td><input type="date" name="v_date_{{ idx }}" class="td-input"></td>
+  <td><input type="text" class="td-input sig-line" disabled placeholder="— sign on paper —"></td>
+</tr>
+<input type="hidden" id="next-verifier-idx" name="idx" value="{{ idx + 1 }}" hx-swap-oob="true">

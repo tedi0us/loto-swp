@@ -1,0 +1,8 @@
+<span id="save-indicator" class="save-indicator save-ok">Saved</span>
+<input type="hidden" id="swp-id-field"  name="swp_id"  value="{{ swp_id }}"  hx-swap-oob="true">
+<input type="hidden" id="loto-id-field" name="loto_id" value="{{ loto_id }}" hx-swap-oob="true">
+<div id="form-actions" class="form-actions" hx-swap-oob="true">
+  <a href="{{ url_for('main.dashboard') }}" class="btn-secondary">Cancel</a>
+  <a href="{{ url_for('swp.review', swp_id=swp_id) }}" class="btn-secondary" style="width:auto;">Review SWP →</a>
+  <a href="{{ url_for('loto.edit', loto_id=loto_id) }}" class="btn-secondary" style="width:auto;">Edit LOTO →</a>
+</div>

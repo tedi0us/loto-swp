@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Safe Work Permits — LOTO / SWP{% endblock %}
+
+{% block content %}
+<div class="logs">
+  <div class="logs-header">
+    <h2>Safe Work Permits</h2>
+    <a href="{{ url_for('swp.new') }}" class="btn-primary" style="width:auto;">+ New SWP</a>
+  </div>
+
+  <div class="tab-bar">
+    <a href="{{ url_for('swp.index', show='drafts') }}"
+       class="tab {{ 'tab-active' if show == 'drafts' }}">Drafts</a>
+    {% if not is_field %}
+    <a href="{{ url_for('swp.index', show='pending_operator') }}"
+       class="tab {{ 'tab-active' if show == 'pending_operator' }}">Operator Review</a>
+    <a href="{{ url_for('swp.index', show='pending') }}"
+       class="tab {{ 'tab-active' if show == 'pending' }}">Mgmt Review</a>
+    {% endif %}
+    <a href="{{ url_for('swp.index', show='active') }}"
+       class="tab {{ 'tab-active' if show == 'active' }}">Active</a>
+    <a href="{{ url_for('swp.index', show='closed') }}"
+       class="tab {{ 'tab-active' if show == 'closed' }}">Closed</a>
+    <a href="{{ url_for('swp.index', show='all') }}"
+       class="tab {{ 'tab-active' if show == 'all' }}">All</a>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Permit #</th>
+          <th>Plant</th>
+          <th>Date</th>
+          <th>Location</th>
+          <th>Work Lead</th>
+          <th>LOTO #</th>
+          <th>Status</th>
+          <th>Created By</th>
+          <th>Entered</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in permits %}
+        <tr>
+          <td class="td-mono">
+            {{ p.permit_number or '—' }}
+            {% if p.is_backdated %}
+            <span class="badge badge-historical" title="Historical record">Historical</span>
+            {% endif %}
+          </td>
+          <td>{{ p.plant or '—' }}</td>
+          <td>{{ p.date or '—' }}</td>
+          <td>{{ p.location or '—' }}</td>
+          <td>{{ p.work_lead or '—' }}</td>
+          <td class="td-mono">
+            {% if p.loto_number %}
+              <a href="{{ url_for('loto.edit', loto_id=p.loto_id) }}" style="color:var(--border-lt)">{{ p.loto_number }}</a>
+            {% else %}—{% endif %}
+          </td>
+          <td><span class="badge badge-{{ p.status }}">{{ p.status | title }}</span></td>
+          <td>{{ (p.first_name ~ ' ' ~ p.last_name) if p.first_name else '—' }}</td>
+          <td class="td-mono">{{ p.created_at[:10] if p.created_at else '—' }}</td>
+          <td>
+            {% if p.status == 'draft' %}
+              <a href="{{ url_for('swp.edit', swp_id=p.id) }}" class="badge badge-login" preload="mouseover">Edit</a>
+            {% elif p.status == 'pending' %}
+              {% if is_admin %}
+              <a href="{{ url_for('swp.review', swp_id=p.id) }}" class="badge badge-pending" preload="mouseover">Review</a>
+              {% else %}
+              <a href="{{ url_for('swp.review', swp_id=p.id) }}" class="badge badge-login" preload="mouseover">View</a>
+              {% endif %}
+            {% else %}
+              <a href="{{ url_for('swp.review', swp_id=p.id) }}" class="badge badge-login" preload="mouseover">View</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="10" style="text-align:center; color:var(--muted); padding:2rem;">
+            No SWPs found.
+            {% if show in ('active', 'all', 'drafts') %}
+            <a href="{{ url_for('swp.new') }}" style="color:var(--border-lt)">Create one →</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

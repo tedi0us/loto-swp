@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Server Error — LOTO / SWP{% endblock %}
+{% block content %}
+<div style="text-align:center; padding: 4rem 1rem;">
+  <h2 style="font-size:1.4rem; margin-bottom:.5rem;">Something went wrong</h2>
+  <p style="color:var(--text-sec);">An unexpected error occurred. It has been logged.</p>
+  <a href="{{ url_for('main.dashboard') }}" class="btn-primary" style="width:auto; margin-top:1.5rem; display:inline-block;">Back to Dashboard</a>
+</div>
+{% endblock %}

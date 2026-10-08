@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Audit Log — LOTO / SWP{% endblock %}
+
+{% block content %}
+<div class="logs">
+  <div class="logs-header">
+    <h2>Audit Log</h2>
+    <div style="display:flex;align-items:center;gap:.75rem;">
+      <span class="logs-count">{{ total }} entries</span>
+      <a href="{{ url_for('main.logs_export', action=action, username=username, date_from=date_from, date_to=date_to) }}"
+         class="btn-secondary" style="width:auto;padding:.35rem .85rem;font-size:.85rem;">
+        ↓ Export CSV
+      </a>
+    </div>
+  </div>
+
+  {# ── Filter form ─────────────────────────────────────────────────────────── #}
+  <form class="log-filters"
+        hx-get="{{ url_for('main.logs') }}"
+        hx-target="#log-table-wrap"
+        hx-select="#log-table-wrap"
+        hx-push-url="true"
+        hx-trigger="change, submit">
+    <div class="field" style="min-width:160px;">
+      <label>Action</label>
+      <select name="action" class="select-field" style="font-size:.85rem;">
+        <option value="">— All —</option>
+        {% for a in all_actions %}
+        <option value="{{ a }}" {{ 'selected' if action == a }}>{{ a }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field" style="min-width:140px;">
+      <label>Username</label>
+      <input type="text" name="username" value="{{ username }}"
+             placeholder="contains…" style="font-size:.85rem;">
+    </div>
+    <div class="field" style="min-width:130px;">
+      <label>From</label>
+      <input type="date" name="date_from" value="{{ date_from }}" style="font-size:.85rem;">
+    </div>
+    <div class="field" style="min-width:130px;">
+      <label>To</label>
+      <input type="date" name="date_to" value="{{ date_to }}" style="font-size:.85rem;">
+    </div>
+    <div class="field" style="align-self:flex-end;">
+      <button type="submit" class="btn-primary" style="width:auto;padding:.45rem .9rem;font-size:.85rem;">Filter</button>
+      <a href="{{ url_for('main.logs') }}" class="btn-secondary"
+         style="width:auto;padding:.45rem .75rem;font-size:.85rem;margin-left:.4rem;">Clear</a>
+    </div>
+  </form>
+
+  {# ── Results ─────────────────────────────────────────────────────────────── #}
+  <div id="log-table-wrap">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>User</th>
+            <th>IP</th>
+            <th>Action</th>
+            <th>Resource</th>
+            <th>Detail</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for e in entries %}
+          <tr class="{{ 'row-fail' if not e.success }}">
+            <td class="td-mono" style="white-space:nowrap;">{{ e.timestamp[:19] }}</td>
+            <td>{{ e.username or '—' }}</td>
+            <td class="td-mono">{{ e.ip_address or '—' }}</td>
+            <td><span class="badge log-action-badge">{{ e.action }}</span></td>
+            <td>
+              {% if e.resource %}
+                {{ e.resource }}{% if e.resource_id %} #{{ e.resource_id }}{% endif %}
+              {% else %}—{% endif %}
+            </td>
+            <td class="td-detail">{{ e.detail or '' }}</td>
+            <td>
+              {% if e.success %}
+                <span class="badge badge-ok">OK</span>
+              {% else %}
+                <span class="badge badge-fail">FAIL</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="7" style="text-align:center; color:var(--muted); padding:2rem;">
+              No log entries match the current filters.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if pages > 1 %}
+    <div class="pagination">
+      {% if page > 1 %}
+        <a href="{{ url_for('main.logs', page=page-1, action=action, username=username, date_from=date_from, date_to=date_to) }}"
+           class="btn-primary" style="width:auto;">← Prev</a>
+      {% endif %}
+      <span>Page {{ page }} of {{ pages }}</span>
+      {% if page < pages %}
+        <a href="{{ url_for('main.logs', page=page+1, action=action, username=username, date_from=date_from, date_to=date_to) }}"
+           class="btn-primary" style="width:auto;">Next →</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

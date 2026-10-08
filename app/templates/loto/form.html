@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+{% from "equipment/macros.html" import equip_display %}
+{% block title %}{{ 'Edit' if loto else 'New' }} LOTO — LOTO / SWP{% endblock %}
+
+{% block content %}
+<div class="swp-form">
+  <div class="form-header">
+    {% if from_swp and swp_row %}
+    <a href="{{ url_for('swp.edit', swp_id=from_swp) }}" class="back-link">← SWP {{ swp_row.permit_number or '#' ~ from_swp }}</a>
+    {% else %}
+    <a href="{{ url_for('loto.index') }}" class="back-link">← LOTO Permits</a>
+    {% endif %}
+    <div style="display:flex;align-items:center;gap:.75rem">
+      <h2>{{ 'Edit LOTO' if loto else 'New LOTO Permit' }}</h2>
+      {% if loto %}
+        {% if loto.loto_number %}<span class="badge badge-loto-{{ loto.status }}">{{ loto.loto_number }}</span>
+        {% elif loto.number_deferred %}<span class="badge badge-loto-{{ loto.status }}">Number pending</span>{% endif %}
+        <span class="badge badge-loto-{{ loto.status }}">{{ loto.status | title }}</span>
+      {% endif %}
+    </div>
+    <span id="save-indicator" class="save-indicator"></span>
+  </div>
+
+  {% if not loto %}
+  <div class="alert alert-info draft-notice" style="margin-bottom:1rem;">
+    This form auto-saves as you go. Drafts not submitted within 48 hours are permanently deleted.
+  </div>
+  {% endif %}
+
+  {% if loto and not loto.swp_id and not loto.is_historical %}
+  <div class="alert alert-warning" style="margin-bottom:1rem;">
+    <strong>No SWP linked.</strong>
+    A SWP is required before this LOTO can be activated.
+    <a href="{{ url_for('swp.new') }}?from_loto={{ loto.id }}" class="btn-secondary"
+       style="margin-left:.75rem;padding:.3rem .75rem;font-size:.85rem;width:auto;display:inline-block;">
+      Create SWP →
+    </a>
+  </div>
+  {% endif %}
+
+  <datalist id="person-list">
+    {% for name in names %}<option value="{{ name }}">{% endfor %}
+  </datalist>
+
+  <form method="post" novalidate
+        {% if can_edit %}
+        hx-post="{{ url_for('loto.autosave') }}"
+        hx-trigger="change, input delay:1000ms"
+        hx-include="this"
+        hx-target="#save-indicator"
+        hx-swap="outerHTML"
+        {% endif %}>
+    {{ form.hidden_tag() }}
+    <input type="hidden" id="loto-id-field" name="loto_id" value="{{ loto.id if loto else '' }}">
+    <input type="hidden" name="from_swp" value="{{ from_swp or '' }}">
+
+    {# ── Plant + Date ──────────────────────────────────────────────────────── #}
+    <div class="swp-section">
+      <div class="swp-grid-3">
+        <div class="field">
+          {{ form.plant.label }}
+          {{ form.plant(class="select-field") }}
+        </div>
+        <div class="field">
+          {{ form.date.label }}
+          {{ form.date(type="date") }}
+        </div>
+      </div>
+      <label class="check-item" style="font-size:.9rem;color:var(--text-sec);margin-top:.6rem;">
+        {{ form.number_deferred(id="number_deferred") }}
+        <span>{{ form.number_deferred.label.text }} — pick plant/fill in details now, assign the number later</span>
+      </label>
+      {% if loto and loto.number_deferred and not loto.loto_number %}
+      <p style="font-size:.82rem;color:var(--muted);margin-top:.35rem;">
+        No LOTO number assigned yet. One will be generated automatically when this permit is activated.
+      </p>
+      {% endif %}
+    </div>
+
+    {# ── Historical record banner ──────────────────────────────────────────── #}
+    <div class="swp-section historical-section">
+      <label class="check-item" style="font-size:.95rem;color:var(--text);">
+        {{ form.is_historical(id="is_historical") }}
+        <span>{{ form.is_historical.label.text }}</span>
+      </label>
+      <div id="historical-fields" style="margin-top:.75rem;">
+        <div class="field">
+          {{ form.backdate_note.label }}
+          {{ form.backdate_note(placeholder="e.g. Binder location, paper permit #, date range…") }}
+        </div>
+        <p class="historical-hint">
+          This record will be marked <strong>Released</strong> and tagged as a historical entry.
+          Set the date to match the original document.
+        </p>
+      </div>
+    </div>
+
+    {# ── Equipment Info ────────────────────────────────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">Equipment Information</h3>
+
+      {{ equip_display(cur_equip, form.plant.data or '') }}
+
+      <div id="equip-work-log-fields" style="{{ '' if cur_equip else 'display:none;' }}margin-top:.75rem;">
+        <div class="field">
+          <label>Work Description</label>
+          <textarea name="equip_comments" rows="2"
+                    placeholder="What is being done to this equipment on this job…"
+                    style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:.55rem .75rem;font-size:.9rem;color:var(--text);outline:none;width:100%;resize:vertical;font-family:var(--font);">{{ work_log.comments if work_log else '' }}</textarea>
+        </div>
+        <div class="swp-grid-3" style="margin-top:.25rem;">
+          <div class="field">
+            <label>Start Date</label>
+            <input type="date" name="equip_start_date" value="{{ work_log.start_date if work_log else '' }}">
+          </div>
+          <div class="field">
+            <label>End Date</label>
+            <input type="date" name="equip_end_date" value="{{ work_log.end_date if work_log else '' }}">
+          </div>
+        </div>
+      </div>
+
+      <div class="swp-grid-3" style="margin-top:.75rem;">
+        <div class="field">
+          {{ form.equipment_id.label }}
+          {{ form.equipment_id(placeholder="Tag / Asset ID") }}
+        </div>
+        <div class="field" style="grid-column:span 2;">
+          {{ form.equipment_description.label }}
+          {{ form.equipment_description(placeholder="e.g. Pump 1A — Brine Feed") }}
+        </div>
+      </div>
+      <div class="swp-grid-3" style="margin-top:.5rem;">
+        <div class="field">
+          {{ form.location.label }}
+          {{ form.location(placeholder="Building / Area") }}
+        </div>
+        <div class="field">
+          {{ form.group_leader.label }}
+          <select name="group_leader" id="group_leader" class="select-field">
+            <option value="">— Select —</option>
+            {% for name in names %}
+            <option value="{{ name }}" {{ 'selected' if form.group_leader.data == name }}>{{ name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin-top:.5rem;">
+        {{ form.job_description.label }}
+        {{ form.job_description(rows=3, placeholder="Describe the work to be performed…") }}
+      </div>
+    </div>
+
+    {# ── Associated SWP ───────────────────────────────────────────────────── #}
+    {% if swp_row %}
+    <div class="swp-section">
+      <h3 class="section-title">Associated SWP</h3>
+      <p style="font-size:.9rem; color:var(--text-sec);">
+        Linked to
+        <a href="{{ url_for('swp.edit', swp_id=swp_row.id) }}" style="color:var(--border-lt);">
+          {{ swp_row.permit_number or 'SWP #' ~ swp_row.id }}
+        </a>
+        {% if swp_row.location %}— {{ swp_row.location }}{% endif %}
+      </p>
+    </div>
+    {% endif %}
+
+    {# ── Part II: Isolation Boundary Points ───────────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">Part II — Isolation Boundary Points</h3>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem;">
+        42 boundary points. Fill in isolation details digitally;
+        <em>Installed By</em> and <em>Verified By</em> are signed on the printed form.
+      </p>
+      <div class="table-wrap">
+        <table class="loto-boundary-table">
+          <thead>
+            <tr>
+              <th style="width:2rem">#</th>
+              <th style="min-width:120px">Equipment / Tag</th>
+              <th style="min-width:110px">Location</th>
+              <th style="min-width:100px">Energy Type</th>
+              <th style="min-width:120px">Isolation Device</th>
+              <th style="min-width:90px">Position</th>
+              <th style="min-width:105px">Installed By</th>
+              <th style="min-width:105px">Verified By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pos in range(1, 43) %}
+            {% set b = boundaries_by_pos.get(pos) %}
+            <tr>
+              <td class="td-num">{{ pos }}</td>
+              <td><input type="text" name="b_equipment_{{ pos }}" class="td-input"
+                         value="{{ b.equipment if b else '' }}" placeholder="Tag / Equip ID"></td>
+              <td><input type="text" name="b_location_{{ pos }}" class="td-input"
+                         value="{{ b.location if b else '' }}" placeholder="Area / Panel"></td>
+              <td><input type="text" name="b_energy_type_{{ pos }}" class="td-input"
+                         value="{{ b.energy_type if b else '' }}" placeholder="Electrical…"></td>
+              <td><input type="text" name="b_isolation_device_{{ pos }}" class="td-input"
+                         value="{{ b.isolation_device if b else '' }}" placeholder="Breaker / Valve…"></td>
+              <td><input type="text" name="b_device_position_{{ pos }}" class="td-input"
+                         value="{{ b.device_position if b else '' }}" placeholder="Locked / Off"></td>
+              <td><input type="text" class="td-input sig-line" disabled placeholder="— paper —"></td>
+              <td><input type="text" class="td-input sig-line" disabled placeholder="— paper —"></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {# ── Part III: Group Lock Verification ────────────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">Part III — Group Lock Verification</h3>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem;">
+        Select personnel who will verify and apply their personal lock.
+        Signatures are applied on the printed form.
+      </p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:2rem">#</th>
+              <th>Name</th>
+              <th>Date</th>
+              <th>Signature</th>
+            </tr>
+          </thead>
+          <tbody id="verifier-body">
+            {% for i in range(verifier_count) %}
+            {% set v = verifiers_by_pos.get(i) %}
+            <tr id="verifier-row-{{ i }}">
+              <td class="td-num">{{ i + 1 }}</td>
+              <td>
+                <input type="text" name="v_name_{{ i }}" class="td-input"
+                       list="person-list"
+                       value="{{ v.name if v else '' }}" placeholder="Full name">
+              </td>
+              <td><input type="date" name="v_date_{{ i }}" class="td-input"
+                         value="{{ v.date if v else '' }}"></td>
+              <td><input type="text" class="td-input sig-line" disabled placeholder="— paper —"></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <input type="hidden" id="next-verifier-idx" name="idx" value="{{ verifier_count }}">
+      <button type="button" class="btn-secondary" style="margin-top:.75rem;width:auto;"
+              hx-get="{{ url_for('loto.verifier_row') }}"
+              hx-include="#next-verifier-idx"
+              hx-target="#verifier-body"
+              hx-swap="beforeend">
+        + Add Row
+      </button>
+    </div>
+  </form>
+
+  {# ── Form Actions — outside main form so nested action forms are valid ─── #}
+  <div id="form-actions" class="form-actions">
+    <a href="{{ url_for('loto.index') }}" class="btn-secondary">
+      {{ 'Back' if not can_edit else 'Cancel' }}
+    </a>
+    {% if loto %}
+      {% if loto.status in ('active','released') or is_admin %}
+      <a href="{{ url_for('pdf.loto_pdf', loto_id=loto.id) }}" class="btn-secondary"
+         style="width:auto;" target="_blank">Download PDF</a>
+      <span hx-get="{{ url_for('pdf.printer_status', type='loto', id=loto.id) }}"
+            hx-trigger="load" hx-swap="outerHTML">
+        <button class="btn-secondary" disabled style="width:auto;opacity:.45;">Print</button>
+      </span>
+      {% endif %}
+      {% if is_admin %}
+        {# Admins can activate draft or pending, and release active #}
+        {% if loto.status in ('draft','pending','pending_operator') and not loto.is_historical %}
+        <form method="post" action="{{ url_for('loto.activate', loto_id=loto.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn-primary" style="width:auto;">Activate LOTO</button>
+        </form>
+        {% elif loto.status == 'active' %}
+        <form method="post" action="{{ url_for('loto.release', loto_id=loto.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn-primary" style="width:auto;">Release LOTO</button>
+        </form>
+        {% endif %}
+      {% elif current_user.role == 'operator' and loto.status == 'pending_operator' %}
+        {# Operators forward EI&C/Mechanic submissions to management #}
+        <form method="post" action="{{ url_for('loto.forward', loto_id=loto.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn-primary" style="width:auto;">Forward to Management</button>
+        </form>
+      {% elif can_edit and loto.status == 'draft' and not loto.is_historical %}
+        {# Operators/field roles submit draft for review #}
+        <form method="post" action="{{ url_for('loto.submit', loto_id=loto.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn-primary" style="width:auto;">Submit for Review</button>
+        </form>
+      {% endif %}
+    {% elif not is_admin %}
+    <span class="btn-primary btn-disabled" style="width:auto;"
+          title="Fill out a field to enable auto-save first">Submit for Review</span>
+    {% endif %}
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='forms.js') }}" defer></script>
+{% endblock %}

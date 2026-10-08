@@ -1,0 +1,14 @@
+{% if continuations %}
+<ul class="cont-list">
+  {% for c in continuations %}
+  <li>
+    <a href="{{ url_for('swp_cont.work_edit', swp_id=swp_id, cont_id=c.id) }}">
+      Work Continuation #{{ c.id }}
+      — {{ c.created_at[:10] if c.created_at else '' }}
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p style="color:var(--muted);font-size:.9rem;">No work continuations yet.</p>
+{% endif %}

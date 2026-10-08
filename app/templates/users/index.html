@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Users — LOTO / SWP{% endblock %}
+
+{% block content %}
+<div class="logs">
+  <div class="logs-header">
+    <h2>Users</h2>
+    <a href="{{ url_for('users.new') }}" class="btn-primary" style="width:auto;">+ New User</a>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Title</th>
+          <th>Role</th>
+          <th>Status</th>
+          <th>Created</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td>
+            {% if u.first_name and u.last_name %}
+              {{ u.first_name }} {{ u.last_name }}
+            {% else %}
+              <span style="color:var(--muted)">—</span>
+            {% endif %}
+          </td>
+          <td class="td-mono">{{ u.username }}</td>
+          <td>{{ u.email or '—' }}</td>
+          <td>{{ u.phone or '—' }}</td>
+          <td>{{ u.title or '—' }}</td>
+          <td>
+            {% set role_label = u.role | replace('_',' ') | title %}
+            {% set role_label = 'EI&C' if u.role == 'ei_c' else role_label %}
+            {% set role_label = 'Management' if u.role == 'admin' else role_label %}
+            {% set role_label = 'IT Admin' if u.role == 'it_admin' else role_label %}
+            <span class="role-badge role-badge-{{ u.role }}">{{ role_label }}</span>
+          </td>
+          <td>
+            {% if u.must_change_password %}
+              <span class="badge badge-login-failed">Temp PW</span>
+            {% else %}
+              <span class="badge badge-ok">Active</span>
+            {% endif %}
+          </td>
+          <td class="td-mono">{{ u.created_at[:10] if u.created_at else '—' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" style="text-align:center; color:var(--muted);">No users found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

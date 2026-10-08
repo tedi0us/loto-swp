@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{ swp.permit_number or 'Safe Work Permit' }}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 9pt; color: #000; background: #fff; }
+
+  @page { size: letter; margin: 0.45in 0.45in 0.45in 0.45in; }
+  @media print { body { margin: 0; } }
+
+  .page { width: 100%; }
+
+  /* ── Header ── */
+  .hdr { display: flex; justify-content: space-between; align-items: flex-start;
+         border-bottom: 2px solid #000; padding-bottom: 4pt; margin-bottom: 6pt; }
+  .hdr-title { font-size: 13pt; font-weight: bold; }
+  .hdr-sub { font-size: 8pt; color: #444; }
+  .hdr-meta { text-align: right; font-size: 8pt; }
+  .hdr-meta .permit-num { font-size: 11pt; font-weight: bold; }
+
+  /* ── Grid rows ── */
+  .row { display: flex; gap: 0; border-bottom: 1px solid #ccc; }
+  .row:first-child { border-top: 1px solid #ccc; }
+  .cell { flex: 1; padding: 3pt 5pt; border-right: 1px solid #ccc; }
+  .cell:last-child { border-right: none; }
+  .cell.w2 { flex: 2; }
+  .cell.w3 { flex: 3; }
+  .lbl { font-size: 7pt; color: #666; text-transform: uppercase; letter-spacing: .02em; }
+  .val { font-size: 9pt; min-height: 11pt; }
+  .val.big { font-size: 9pt; min-height: 22pt; white-space: pre-wrap; }
+
+  /* ── Section headers ── */
+  .sec-hdr { background: #1a1a2e; color: #fff; font-weight: bold; font-size: 8pt;
+             padding: 3pt 5pt; letter-spacing: .04em; margin-top: 5pt; }
+
+  /* ── Checkbox grid ── */
+  .chk-grid { display: flex; flex-wrap: wrap; gap: 0;
+              border: 1px solid #ccc; border-top: none; }
+  .chk-item { width: 25%; padding: 3pt 5pt; border-right: 1px solid #ccc;
+              border-bottom: 1px solid #ccc; display: flex; align-items: center; gap: 4pt;
+              font-size: 8.5pt; }
+  .chk-item.w50 { width: 50%; }
+  .chk-item.w100 { width: 100%; }
+  .box { width: 9pt; height: 9pt; border: 1.5px solid #000; flex-shrink: 0;
+         display: inline-flex; align-items: center; justify-content: center;
+         font-size: 9pt; line-height: 1; }
+  .box.checked::after { content: '✓'; font-weight: bold; }
+
+  /* ── Associated permits ── */
+  .permit-row { display: flex; flex-wrap: wrap; gap: 0;
+                border: 1px solid #ccc; border-top: none; }
+  .permit-cell { flex: 1; padding: 3pt 5pt; border-right: 1px solid #ccc; min-width: 100pt; }
+  .permit-cell:last-child { border-right: none; }
+
+  /* ── Attendees table ── */
+  table { width: 100%; border-collapse: collapse; font-size: 8.5pt; }
+  th { background: #eee; border: 1px solid #ccc; padding: 3pt 5pt;
+       text-align: left; font-size: 7.5pt; }
+  td { border: 1px solid #ccc; padding: 3pt 5pt; min-height: 14pt; }
+
+  /* ── Signature blocks ── */
+  .sig-section { margin-top: 5pt; }
+  .sig-row { display: flex; gap: 0; border: 1px solid #ccc; border-bottom: none; }
+  .sig-row:last-child { border-bottom: 1px solid #ccc; }
+  .sig-cell { flex: 1; padding: 3pt 5pt; border-right: 1px solid #ccc; }
+  .sig-cell:last-child { border-right: none; }
+  .sig-line { border-bottom: 1px solid #999; margin-top: 10pt; margin-bottom: 2pt; }
+
+  .muted { color: #888; font-style: italic; }
+  .page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="hdr">
+    <div>
+      <div class="hdr-title">Safe Work Permit</div>
+      <div class="hdr-sub">{{ swp.plant or '' }} Plant &nbsp;|&nbsp; SWP-01</div>
+    </div>
+    <div class="hdr-meta">
+      <div class="permit-num">{{ swp.permit_number or 'DRAFT' }}</div>
+      <div>Status: {{ swp.status | title }}</div>
+    </div>
+  </div>
+
+  <!-- Top details -->
+  <div class="row">
+    <div class="cell"><div class="lbl">Date</div><div class="val">{{ swp.date or '' }}</div></div>
+    <div class="cell"><div class="lbl">Time</div><div class="val">{{ swp.time or '' }}</div></div>
+    <div class="cell w2"><div class="lbl">Location</div><div class="val">{{ swp.location or '' }}</div></div>
+  </div>
+  <div class="row">
+    <div class="cell w2"><div class="lbl">Company</div><div class="val">{{ swp.company or '' }}</div></div>
+    <div class="cell w2"><div class="lbl">Work Lead</div><div class="val">{{ swp.work_lead or '' }}</div></div>
+    <div class="cell w2"><div class="lbl">PJSM Leader</div><div class="val">{{ swp.pjsm_leader or '' }}</div></div>
+  </div>
+  <div class="row">
+    <div class="cell w3"><div class="lbl">Scope of Work</div><div class="val big">{{ swp.scope_of_work or '' }}</div></div>
+  </div>
+
+  <!-- Pre-job Safety -->
+  <div class="sec-hdr">Pre-Job Safety</div>
+  <div class="chk-grid">
+    {% macro yesno(val, label) %}
+    <div class="chk-item w50">
+      <span class="box {{ 'checked' if val }}"></span>Yes &nbsp;
+      <span class="box {{ 'checked' if not val }}"></span>No &nbsp; {{ label }}
+    </div>
+    {% endmacro %}
+    {{ yesno(swp.first_time, 'First time performing this work?') }}
+    {{ yesno(swp.training, 'Task training complete?') }}
+    {{ yesno(swp.inspection, 'Pre-job inspection done?') }}
+    {{ yesno(swp.continuation, 'Continuation permit?') }}
+  </div>
+
+  <!-- Hazard Energy -->
+  <div class="sec-hdr">Hazard Energy Types</div>
+  <div class="chk-grid">
+    {% macro chk(val, label) %}<div class="chk-item"><span class="box {{ 'checked' if val }}"></span>{{ label }}</div>{% endmacro %}
+    {{ chk(swp.he_electrical,  'Electrical') }}
+    {{ chk(swp.he_mechanical,  'Mechanical') }}
+    {{ chk(swp.he_thermal,     'Thermal') }}
+    {{ chk(swp.he_pressure,    'Pressure') }}
+    {{ chk(swp.he_motion,      'Motion') }}
+    {{ chk(swp.he_gravity,     'Gravity') }}
+    {{ chk(swp.he_chemical,    'Chemical') }}
+    {{ chk(swp.he_radiation,   'Radiation') }}
+    {{ chk(swp.he_biological,  'Biological') }}
+    {{ chk(swp.he_noise,       'Noise') }}
+  </div>
+
+  <!-- PPE -->
+  <div class="sec-hdr">PPE Required</div>
+  <div class="chk-grid">
+    {{ chk(swp.ppe_hard_hat,        'Hard Hat') }}
+    {{ chk(swp.ppe_safety_glasses,  'Safety Glasses') }}
+    {{ chk(swp.ppe_gloves,          'Gloves') }}
+    {{ chk(swp.ppe_fr_clothing,     'FR Clothing') }}
+    {{ chk(swp.ppe_safety_shoes,    'Safety Shoes') }}
+    {{ chk(swp.ppe_face_shield,     'Face Shield') }}
+    {{ chk(swp.ppe_hearing_prot,    'Hearing Prot.') }}
+    {{ chk(swp.ppe_respirator,      'Respirator') }}
+    {{ chk(swp.ppe_insul_gloves,    'Insulating Gloves') }}
+    {{ chk(swp.ppe_arc_flash_suit,  'Arc Flash Suit') }}
+    {{ chk(swp.ppe_arc_flash_hood,  'Arc Flash Hood') }}
+    {{ chk(swp.ppe_welding_hood,    'Welding Hood') }}
+    {{ chk(swp.ppe_fall_protect,    'Fall Protection') }}
+    {{ chk(swp.ppe_cut_protect,     'Cut Protection') }}
+    {{ chk(swp.ppe_brine_gear,      'Brine Gear') }}
+    {{ chk(swp.ppe_chem_res_gloves, 'Chem-Res. Gloves') }}
+    {{ chk(swp.ppe_chem_res_cloth,  'Chem-Res. Clothing') }}
+    {{ chk(swp.ppe_chem_res_boot,   'Chem-Res. Boots') }}
+    {% if swp.ppe_other1 %}<div class="chk-item w50"><span class="box checked"></span>Other: {{ swp.ppe_other1_txt or '' }}</div>{% endif %}
+    {% if swp.ppe_other2 %}<div class="chk-item w50"><span class="box checked"></span>Other: {{ swp.ppe_other2_txt or '' }}</div>{% endif %}
+  </div>
+
+  <!-- THA -->
+  <div class="sec-hdr">Task Hazard Assessment</div>
+  <div class="chk-grid">
+    {{ chk(swp.tha_loto,             'LOTO') }}
+    {{ chk(swp.tha_confined_space,   'Confined Space') }}
+    {{ chk(swp.tha_elevated_work,    'Elevated Work') }}
+    {{ chk(swp.tha_hot_work,         'Hot Work') }}
+    {{ chk(swp.tha_power_tools,      'Power Tools') }}
+    {{ chk(swp.tha_vehicles,         'Vehicles') }}
+    {{ chk(swp.tha_mobile_equip,     'Mobile Equip.') }}
+    {{ chk(swp.tha_heavy_equip,      'Heavy Equip.') }}
+    {{ chk(swp.tha_slips_trips,      'Slips/Trips/Falls') }}
+    {{ chk(swp.tha_nip_pinch,        'Nip/Pinch Points') }}
+    {{ chk(swp.tha_break_sys_integ,  'Break Sys. Integrity') }}
+    {{ chk(swp.tha_ergonomics,       'Ergonomics') }}
+    {{ chk(swp.tha_extreme_heat,     'Extreme Heat') }}
+    {{ chk(swp.tha_extreme_cold,     'Extreme Cold') }}
+    {{ chk(swp.tha_high_wind,        'High Wind') }}
+    {{ chk(swp.tha_rain_snow,        'Rain / Snow') }}
+    {% if swp.tha_other %}<div class="chk-item w50"><span class="box checked"></span>Other: {{ swp.tha_other_txt or '' }}</div>{% endif %}
+  </div>
+
+  <!-- Task Safeguards -->
+  <div class="sec-hdr">Task Safeguards (PJSM Topics)</div>
+  <div class="chk-grid">
+    {{ chk(swp.ts_review_procedures,  'Review Procedures') }}
+    {{ chk(swp.ts_valve_positions,    'Verify Valve Positions') }}
+    {{ chk(swp.ts_cross_connects,     'Check Cross-Connects') }}
+    {{ chk(swp.ts_barricade,          'Barricade Area') }}
+    {{ chk(swp.ts_adjacent_work,      'Adjacent Work Review') }}
+    {{ chk(swp.ts_haz_comm,           'Hazard Communication') }}
+    {{ chk(swp.ts_addl_permits,       'Additional Permits') }}
+    {{ chk(swp.ts_equip_inspect,      'Equipment Inspection') }}
+    {{ chk(swp.ts_high_temp_lines,    'High-Temp Lines') }}
+    {{ chk(swp.ts_min_approach,       'Min. Approach Distance') }}
+    {{ chk(swp.ts_safety_observer,    'Safety Observer') }}
+    {{ chk(swp.ts_slings_lifting,     'Slings / Lifting') }}
+    {% if swp.ts_other1 %}<div class="chk-item w50"><span class="box checked"></span>Other: {{ swp.ts_other1_txt or '' }}</div>{% endif %}
+    {% if swp.ts_other2 %}<div class="chk-item w50"><span class="box checked"></span>Other: {{ swp.ts_other2_txt or '' }}</div>{% endif %}
+  </div>
+
+  <!-- Associated Permits -->
+  <div class="sec-hdr">Associated Permits</div>
+  <div class="permit-row">
+    <div class="permit-cell"><div class="lbl">LOTO</div><div class="val">{{ swp.permit_loto or '' }}</div></div>
+    <div class="permit-cell"><div class="lbl">Hot Work</div><div class="val">{{ swp.permit_hot_work or '' }}</div></div>
+    <div class="permit-cell"><div class="lbl">Confined Space</div><div class="val">{{ swp.permit_confined_sp or '' }}</div></div>
+    <div class="permit-cell"><div class="lbl">Electrical</div><div class="val">{{ swp.permit_electrical or '' }}</div></div>
+    <div class="permit-cell"><div class="lbl">Excavation</div><div class="val">{{ swp.permit_excavation or '' }}</div></div>
+    <div class="permit-cell"><div class="lbl">Other</div><div class="val">{{ swp.permit_other or '' }}</div></div>
+  </div>
+
+  <!-- Hazard Mitigation & Comments -->
+  <div class="row" style="margin-top:5pt">
+    <div class="cell w3"><div class="lbl">Hazard Mitigation Methods</div><div class="val big">{{ swp.hazard_mitigation or '' }}</div></div>
+  </div>
+  <div class="row">
+    <div class="cell w3"><div class="lbl">Additional Comments</div><div class="val big">{{ swp.additional_comments or '' }}</div></div>
+  </div>
+
+  <!-- Attendees -->
+  <div class="sec-hdr" style="margin-top:5pt">Pre-Job Safety Meeting Attendees</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:2em">#</th>
+        <th>Name</th>
+        <th style="width:30%">Company</th>
+        <th style="width:5em">Date</th>
+        <th style="width:30%">Signature</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in attendees %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ a.name or '' }}</td>
+        <td>{{ a.company or '' }}</td>
+        <td>{{ a.date or '' }}</td>
+        <td>&nbsp;</td>
+      </tr>
+      {% endfor %}
+      {% for _ in range([0, 6 - attendees|length]|max) %}
+      <tr><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <!-- Issued / Closed signature blocks -->
+  <div class="sig-section">
+    <div class="sec-hdr" style="margin-top:5pt">Authorization</div>
+    <div class="sig-row">
+      <div class="sig-cell">
+        <div class="lbl">Issued — Authorizer Name</div>
+        <div class="val">{{ swp.issued_auth_name or '' }}</div>
+        <div class="sig-line"></div>
+        <div class="lbl">Signature</div>
+      </div>
+      <div class="sig-cell">
+        <div class="lbl">Issued — Work Lead Name</div>
+        <div class="val">{{ swp.issued_wl_name or '' }}</div>
+        <div class="sig-line"></div>
+        <div class="lbl">Signature</div>
+      </div>
+      <div class="sig-cell" style="flex:0.5">
+        <div class="lbl">Date</div>
+        <div class="val">{{ swp.issued_date or '' }}</div>
+      </div>
+      <div class="sig-cell" style="flex:0.5">
+        <div class="lbl">Time</div>
+        <div class="val">{{ swp.issued_time or '' }}</div>
+      </div>
+    </div>
+    <div class="sig-row">
+      <div class="sig-cell">
+        <div class="lbl">Closed — Authorizer Name</div>
+        <div class="val">{{ swp.closed_auth_name or '' }}</div>
+        <div class="sig-line"></div>
+        <div class="lbl">Signature</div>
+      </div>
+      <div class="sig-cell">
+        <div class="lbl">Closed — Work Lead Name</div>
+        <div class="val">{{ swp.closed_wl_name or '' }}</div>
+        <div class="sig-line"></div>
+        <div class="lbl">Signature</div>
+      </div>
+      <div class="sig-cell" style="flex:0.5">
+        <div class="lbl">Date</div>
+        <div class="val">{{ swp.closed_date or '' }}</div>
+      </div>
+      <div class="sig-cell" style="flex:0.5">
+        <div class="lbl">Time</div>
+        <div class="val">{{ swp.closed_time or '' }}</div>
+      </div>
+    </div>
+    <div class="sig-row">
+      <div class="sig-cell">
+        <div class="lbl">PJSM Leader / EHST</div>
+        <div class="val">{{ swp.pjsm_leader or '' }}</div>
+        <div class="sig-line"></div>
+        <div class="lbl">Signature</div>
+      </div>
+      <div class="sig-cell" style="flex:0.5">
+        <div class="lbl">Date</div>
+        <div class="val">{{ swp.ehst_date or '' }}</div>
+      </div>
+      <div class="sig-cell" style="flex:2">
+        <div class="lbl">Notes</div>
+        <div class="val">&nbsp;</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

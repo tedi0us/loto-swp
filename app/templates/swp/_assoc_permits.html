@@ -1,0 +1,75 @@
+{% set any_shown = show_loto or show_hot or show_confined %}
+{% if any_shown %}
+<div class="swp-section">
+  <h3 class="section-title">Associated Permits</h3>
+  <p class="historical-hint" style="margin-bottom:1rem;">
+    Enter an existing permit number, or leave blank — a new permit will be created after saving.
+  </p>
+  <div class="swp-grid-3">
+
+    {% if show_loto %}
+    <div class="field">
+      <label for="permit_loto">LOTO #</label>
+      <input type="text" name="permit_loto" id="permit_loto"
+             value="{{ permit_loto }}"
+             placeholder="Existing # or leave blank">
+    </div>
+    {% else %}
+    <input type="hidden" name="permit_loto" value="{{ permit_loto }}">
+    {% endif %}
+
+    {% if show_hot %}
+    <div class="field">
+      <label for="permit_hot_work">Hot Work #</label>
+      <input type="text" name="permit_hot_work" id="permit_hot_work"
+             value="{{ permit_hot_work }}"
+             placeholder="Existing # or leave blank">
+    </div>
+    {% else %}
+    <input type="hidden" name="permit_hot_work" value="{{ permit_hot_work }}">
+    {% endif %}
+
+    {% if show_confined %}
+    <div class="field">
+      <label for="permit_confined_sp">Confined Space #</label>
+      <input type="text" name="permit_confined_sp" id="permit_confined_sp"
+             value="{{ permit_confined_sp }}"
+             placeholder="Existing # or leave blank">
+    </div>
+    {% else %}
+    <input type="hidden" name="permit_confined_sp" value="{{ permit_confined_sp }}">
+    {% endif %}
+
+    {# Always show these three when the section is open — no direct THA mapping #}
+    <div class="field">
+      <label for="permit_electrical">Electrical #</label>
+      <input type="text" name="permit_electrical" id="permit_electrical"
+             value="{{ permit_electrical }}"
+             placeholder="Existing # or leave blank">
+    </div>
+
+    <div class="field">
+      <label for="permit_excavation">Excavation #</label>
+      <input type="text" name="permit_excavation" id="permit_excavation"
+             value="{{ permit_excavation }}"
+             placeholder="Existing # or leave blank">
+    </div>
+
+    <div class="field">
+      <label for="permit_other">Other #</label>
+      <input type="text" name="permit_other" id="permit_other"
+             value="{{ permit_other }}"
+             placeholder="Existing # or leave blank">
+    </div>
+
+  </div>
+</div>
+{% else %}
+{# Section hidden — preserve all values as hidden inputs so they survive form submit #}
+<input type="hidden" name="permit_loto"        value="{{ permit_loto }}">
+<input type="hidden" name="permit_hot_work"    value="{{ permit_hot_work }}">
+<input type="hidden" name="permit_confined_sp" value="{{ permit_confined_sp }}">
+<input type="hidden" name="permit_electrical"  value="{{ permit_electrical }}">
+<input type="hidden" name="permit_excavation"  value="{{ permit_excavation }}">
+<input type="hidden" name="permit_other"       value="{{ permit_other }}">
+{% endif %}

@@ -1,0 +1,64 @@
+<div class="equip-picker">
+  <div class="equip-picker-header">
+    <button type="button" class="btn-link"
+            hx-get="{{ url_for('equipment.picker', plant=plant) }}"
+            hx-target="#equipment-dialog-body"
+            hx-swap="innerHTML">
+      ← Back to Search
+    </button>
+    <h3 class="equip-picker-title">Create New Equipment</h3>
+    <button type="button" class="equip-dialog-close-btn" aria-label="Close">✕</button>
+  </div>
+
+  <form hx-post="{{ url_for('equipment.create') }}"
+        hx-target="#equip-selected-display"
+        hx-swap="outerHTML"
+        class="equip-create-form">
+
+    <div id="equip-create-error" style="display:none;" class="alert alert-error" style="margin-bottom:.75rem;"></div>
+
+    <div class="swp-grid-2" style="gap:.6rem;">
+      <div class="field">
+        <label>Plant <span style="color:var(--danger)">*</span></label>
+        <select name="plant" class="select-field equip-plant-sel">
+          <option value="">— Select —</option>
+          <option value="NV" {{ 'selected' if plant == 'NV' }}>NV</option>
+          <option value="SE" {{ 'selected' if plant == 'SE' }}>SE</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Process Name <span style="color:var(--danger)">*</span></label>
+        <input type="text" name="process_name" id="equip-process-name"
+               placeholder="e.g. Feed Pump A" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>Tag ID Preview</label>
+        <input type="text" id="equip-tag-preview" disabled
+               placeholder="Auto-generated" class="equip-tag-preview">
+      </div>
+      <div class="field">
+        <label>Make</label>
+        <input type="text" name="make" placeholder="e.g. Grundfos">
+      </div>
+      <div class="field">
+        <label>Model</label>
+        <input type="text" name="model" placeholder="e.g. CM5-6">
+      </div>
+      <div class="field">
+        <label>Location</label>
+        <input type="text" name="location" placeholder="Building / Area">
+      </div>
+    </div>
+
+    <div class="field" style="margin-top:.25rem;">
+      <label>Notes</label>
+      <textarea name="notes" rows="2" placeholder="Additional notes…"
+                style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:.55rem .75rem;font-size:.9rem;color:var(--text);outline:none;width:100%;resize:vertical;font-family:var(--font);"></textarea>
+    </div>
+
+    <div class="equip-picker-footer" style="margin-top:.75rem;">
+      <button type="submit" class="btn-primary" style="width:auto;">Create &amp; Select</button>
+    </div>
+  </form>
+</div>
+

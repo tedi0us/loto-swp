@@ -1,0 +1,25 @@
+{% if results %}
+<ul class="equip-result-list">
+  {% for eq in results %}
+  <li class="equip-result-item">
+    <div class="equip-result-info">
+      <strong class="equip-tag">{{ eq.tag_id }}</strong>
+      <span class="equip-name">{{ eq.process_name }}</span>
+      {% if eq.make or eq.model %}
+      <span class="equip-meta">{{ (eq.make or '') ~ (' ' if eq.make and eq.model else '') ~ (eq.model or '') }}</span>
+      {% endif %}
+    </div>
+    <button type="button" class="btn-secondary equip-select-btn"
+            hx-get="{{ url_for('equipment.select', equip_id=eq.id) }}"
+            hx-target="#equip-selected-display"
+            hx-swap="outerHTML">
+      Select
+    </button>
+  </li>
+  {% endfor %}
+</ul>
+{% elif q %}
+<p class="equip-no-results">No equipment found for <em>{{ q }}</em>. Try a different term or create new.</p>
+{% else %}
+<p class="equip-no-results">Type to search existing equipment.</p>
+{% endif %}

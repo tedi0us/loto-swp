@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}New User — LOTO / SWP{% endblock %}
+
+{% block content %}
+<div class="form-page">
+  <div class="form-header">
+    <a href="{{ url_for('users.index') }}" class="back-link">← Users</a>
+    <h2>New User</h2>
+  </div>
+
+  <div class="form-card">
+    <form method="post" action="{{ url_for('users.new') }}" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="field-row">
+        <div class="field">
+          {{ form.first_name.label }}
+          {{ form.first_name(autofocus=true) }}
+          {% for e in form.first_name.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+        </div>
+        <div class="field">
+          {{ form.last_name.label }}
+          {{ form.last_name() }}
+          {% for e in form.last_name.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          {{ form.username.label }}
+          {{ form.username(autocomplete="off") }}
+          {% for e in form.username.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+        </div>
+        <div class="field">
+          {{ form.role.label }}
+          {{ form.role() }}
+          {% for e in form.role.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+        </div>
+      </div>
+
+      <div class="field">
+        {{ form.email.label }}
+        {{ form.email(type="email") }}
+        {% for e in form.email.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          {{ form.phone.label }}
+          {{ form.phone(placeholder="+15551234567") }}
+          <small class="field-hint">E.164 format: +15551234567</small>
+          {% for e in form.phone.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+        </div>
+        <div class="field">
+          {{ form.title.label }}
+          {{ form.title() }}
+          {% for e in form.title.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Plant</label>
+        <div style="display:flex;gap:1.25rem;margin-top:.25rem;">
+          <div style="display:flex;align-items:center;gap:.4rem;">
+            {{ form.plant_nv(id="plant_nv", style="width:14px;height:14px;margin:0;cursor:pointer;") }}
+            <label for="plant_nv" style="margin:0;font-weight:normal;font-size:.9rem;cursor:pointer;">NV</label>
+          </div>
+          <div style="display:flex;align-items:center;gap:.4rem;">
+            {{ form.plant_se(id="plant_se", style="width:14px;height:14px;margin:0;cursor:pointer;") }}
+            <label for="plant_se" style="margin:0;font-weight:normal;font-size:.9rem;cursor:pointer;">SE</label>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.5rem;">
+        {{ form.notify_sms(id="notify_sms_new", style="width:14px;height:14px;margin:0;cursor:pointer;") }}
+        <label for="notify_sms_new" style="margin:0;font-weight:normal;font-size:.9rem;cursor:pointer;">
+          {{ form.notify_sms.label.text }}
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <a href="{{ url_for('users.index') }}" class="btn-secondary">Cancel</a>
+        <button type="submit" class="btn-primary" style="width:auto;">Create User</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

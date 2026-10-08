@@ -1,0 +1,15 @@
+{% if continuations %}
+<ul class="cont-list">
+  {% for c in continuations %}
+  <li>
+    <a href="{{ url_for('swp_cont.pjsm_edit', swp_id=swp_id, cont_id=c.id) }}">
+      PJSM Continuation #{{ c.id }}
+      {% if c.date_time %} — {{ c.date_time }}{% endif %}
+      {% if c.work_lead %} ({{ c.work_lead }}){% endif %}
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p style="color:var(--muted);font-size:.9rem;">No PJSM continuations yet.</p>
+{% endif %}

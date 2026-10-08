@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Signature Recorded — LOTO / SWP{% endblock %}
+{% block content %}
+<div style="max-width:36rem;margin:3rem auto;padding:0 1rem;text-align:center">
+
+  <div style="font-size:3rem;margin-bottom:1rem">&#10003;</div>
+  <h1 style="margin-bottom:.5rem">Signature Recorded</h1>
+  <p class="muted" style="margin-bottom:1.5rem">
+    Your signature has been applied to
+    <strong>
+      {% if row.permit_type == 'swp' %}{{ permit.permit_number or ('SWP #' ~ permit.id) }}
+      {% else %}{{ permit.loto_number or ('LOTO #' ~ permit.id) }}{% endif %}
+    </strong>.
+  </p>
+
+  <div class="card" style="text-align:left;margin-bottom:1.5rem">
+    <dl class="detail-grid">
+      <dt>Permit</dt>
+      <dd>
+        {{ row.permit_type | upper }}
+        {% if row.permit_type == 'swp' %}{{ permit.permit_number or ('#' ~ permit.id) }}
+        {% else %}{{ permit.loto_number or ('#' ~ permit.id) }}{% endif %}
+      </dd>
+      <dt>Role</dt>       <dd>{{ row.signature_role | replace('_',' ') | title }}</dd>
+      <dt>Signed as</dt>  <dd>{{ signature_data }}</dd>
+    </dl>
+  </div>
+
+  <p class="muted" style="font-size:.875rem">You may close this window.</p>
+
+</div>
+{% endblock %}

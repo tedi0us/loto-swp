@@ -1,0 +1,21 @@
+<div id="equip-selected-display" class="equip-selected equip-has-selection">
+  <input type="hidden" name="equip_id" id="equip-id-val" value="{{ eq.id }}">
+  <div class="equip-selected-info">
+    <span class="equip-tag">{{ eq.tag_id }}</span>
+    <span class="equip-name">{{ eq.process_name }}</span>
+    {% if eq.make or eq.model %}
+    <span class="equip-meta">{{ (eq.make or '') ~ (' ' if eq.make and eq.model else '') ~ (eq.model or '') }}</span>
+    {% endif %}
+  </div>
+  <button type="button" class="btn-link"
+          hx-get="{{ url_for('equipment.picker', plant=eq.plant) }}"
+          hx-target="#equipment-dialog-body"
+          hx-swap="innerHTML">
+    Change
+  </button>
+</div>
+{# OOB: auto-fill the free-text equipment fields on the LOTO form if present #}
+<input type="text" id="equipment_id" name="equipment_id"
+       value="{{ eq.tag_id }}" hx-swap-oob="true">
+<input type="text" id="equipment_description" name="equipment_description"
+       value="{{ eq.process_name }}" hx-swap-oob="true">

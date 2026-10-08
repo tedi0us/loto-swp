@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}My Signatures — LOTO / SWP{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>My Signatures</h1>
+</div>
+
+{% if pending %}
+<section class="swp-section" style="margin-bottom:1.5rem">
+  <h2 class="section-title">Pending <span class="badge badge-warn">{{ pending|length }}</span></h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Permit</th>
+        <th>Role</th>
+        <th>Requested</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in pending %}
+      <tr>
+        <td>
+          <span class="badge badge-{{ s.permit_type }}">{{ s.permit_type | upper }}</span>
+          {{ s.permit_number or ('#' ~ s.permit_id) }}
+        </td>
+        <td>{{ s.signature_role | replace('_', ' ') | title }}</td>
+        <td class="td-mono" style="white-space:nowrap">{{ s.requested_at[:16] }}</td>
+        <td style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+          <a href="{{ url_for('signatures.view', sig_id=s.id) }}" class="btn-primary" style="width:auto;padding:.35rem .85rem;font-size:.85rem;">
+            {% if s.physical_only %}Acknowledge{% else %}Sign{% endif %}
+          </a>
+          {% if s.token and not s.physical_only %}
+          <button type="button"
+                  class="btn-secondary"
+                  style="width:auto;padding:.35rem .85rem;font-size:.85rem;"
+                  onclick="navigator.clipboard.writeText('{{ request.host_url.rstrip('/') }}{{ url_for('signatures.sign_via_token', token=s.token) }}').then(()=>{this.textContent='Copied!';setTimeout(()=>{this.textContent='Copy Link'},2000)})"
+                  title="Copy signing link to clipboard">
+            Copy Link
+          </button>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% else %}
+<p class="muted" style="margin-bottom:1.5rem">No pending signatures.</p>
+{% endif %}
+
+{% if recent %}
+<section class="swp-section">
+  <h2 class="section-title">Recently Completed</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Permit</th>
+        <th>Role</th>
+        <th>Status</th>
+        <th>Completed</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for s in recent %}
+      <tr>
+        <td>
+          <span class="badge badge-{{ s.permit_type }}">{{ s.permit_type | upper }}</span>
+          {{ s.permit_number or ('#' ~ s.permit_id) }}
+        </td>
+        <td>{{ s.signature_role | replace('_', ' ') | title }}</td>
+        <td>
+          {% if s.status == 'signed' %}
+            <span class="badge badge-ok">Signed</span>
+          {% elif s.status == 'acknowledged' %}
+            <span class="badge badge-ok">Acknowledged</span>
+          {% else %}
+            <span class="badge">{{ s.status | title }}</span>
+          {% endif %}
+        </td>
+        <td class="td-mono" style="white-space:nowrap">
+          {{ (s.completed_at or s.acknowledged_at or '')[:16] }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endif %}
+{% endblock %}

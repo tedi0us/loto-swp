@@ -1,0 +1,7 @@
+<tr>
+  <td class="td-num">{{ idx + 1 }}</td>
+  <td><input type="text" name="attend_name_{{ idx }}" class="td-input" list="person-list" placeholder="Full name"></td>
+  <td><input type="text" name="attend_company_{{ idx }}" class="td-input" placeholder="Company"></td>
+  <td><input type="date" name="attend_date_{{ idx }}" class="td-input"></td>
+</tr>
+<input type="hidden" id="next-row-idx" name="idx" value="{{ idx + 1 }}" hx-swap-oob="true">

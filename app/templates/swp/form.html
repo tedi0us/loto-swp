@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+{% from "equipment/macros.html" import equip_display %}
+{% block title %}{{ 'Edit' if swp else 'New' }} SWP — LOTO / SWP{% endblock %}
+
+{% block content %}
+<div class="swp-form">
+  <div class="form-header">
+    <a href="{{ url_for('swp.index') }}" class="back-link">← Safe Work Permits</a>
+    <div style="display:flex;align-items:center;gap:.75rem">
+      <h2>{{ 'Edit SWP' if swp else 'New Safe Work Permit' }}</h2>
+      {% if swp %}<span class="badge badge-{{ swp.status }}">{{ swp.status | title }}</span>{% endif %}
+    </div>
+    <span id="save-indicator" class="save-indicator"></span>
+  </div>
+
+  {% if not swp %}
+  <div class="alert alert-info draft-notice" style="margin-bottom:1rem;">
+    This form auto-saves as you go. Drafts not submitted within 48 hours are permanently deleted.
+  </div>
+  {% endif %}
+
+  <form method="post" novalidate
+        hx-post="{{ url_for('swp.autosave') }}"
+        hx-trigger="change, input delay:1000ms"
+        hx-include="this"
+        hx-target="#save-indicator"
+        hx-swap="outerHTML">
+    {{ form.hidden_tag() }}
+    <input type="hidden" id="swp-id-field" name="swp_id" value="{{ swp.id if swp else '' }}">
+    <input type="hidden" name="from_loto" value="{{ from_loto or '' }}">
+
+    {# ── Plant ──────────────────────────────────────────────────────────────── #}
+    <div class="swp-section">
+      <div class="field" style="max-width:200px;">
+        {{ form.plant.label }}
+        {{ form.plant(class="select-field") }}
+      </div>
+    </div>
+
+    {# ── Equipment ──────────────────────────────────────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">Equipment</h3>
+
+      {{ equip_display(cur_equip, form.plant.data or '') }}
+
+      <div id="equip-work-log-fields" style="{{ '' if cur_equip else 'display:none;' }}margin-top:.75rem;">
+        <div class="field">
+          <label>Work Description</label>
+          <textarea name="equip_comments" rows="2"
+                    placeholder="What is being done to this equipment on this job…"
+                    style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:.55rem .75rem;font-size:.9rem;color:var(--text);outline:none;width:100%;resize:vertical;font-family:var(--font);">{{ work_log.comments if work_log else '' }}</textarea>
+        </div>
+        <div class="swp-grid-3" style="margin-top:.25rem;">
+          <div class="field">
+            <label>Start Date</label>
+            <input type="date" name="equip_start_date" value="{{ work_log.start_date if work_log else '' }}">
+          </div>
+          <div class="field">
+            <label>End Date</label>
+            <input type="date" name="equip_end_date" value="{{ work_log.end_date if work_log else '' }}">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ── Historical record banner ─────────────────────────────────────────── #}
+    <div class="swp-section historical-section">
+      <label class="check-item" style="font-size:.95rem;color:var(--text);">
+        {{ form.is_backdated(id="is_backdated") }}
+        <span>{{ form.is_backdated.label.text }}</span>
+      </label>
+      <div id="backdate-fields" style="margin-top:.75rem;">
+        <div class="swp-grid-2">
+          <div class="field">
+            {{ form.backdate_note.label }}
+            {{ form.backdate_note(placeholder="e.g. Paper permit #, binder location, date range…") }}
+          </div>
+          <div class="field">
+            {{ form.permit_number.label }}
+            {{ form.permit_number(placeholder="Original permit # if known") }}
+          </div>
+        </div>
+        <p class="historical-hint">
+          This record will be marked <strong>Closed</strong> and tagged as a historical entry.
+          Set the permit date to match the original document.
+        </p>
+      </div>
+    </div>
+
+    {# ── 1. Permit Information ──────────────────────────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">Permit Information</h3>
+      <div class="swp-grid-3">
+        <div class="field">{{ form.date.label }}{{ form.date(type="date") }}</div>
+        <div class="field">{{ form.time.label }}{{ form.time(type="time") }}</div>
+        <div class="field">{{ form.location.label }}{{ form.location() }}</div>
+        <div class="field">{{ form.company.label }}{{ form.company() }}</div>
+        <div class="field">
+          <label for="work_lead">Work Lead</label>
+          <select name="work_lead" id="work_lead" class="select-field">
+            <option value="">— Select —</option>
+            <optgroup label="Staff">
+              {% for name in staff_names %}
+              <option value="{{ name }}" {{ 'selected' if form.work_lead.data == name }}>{{ name }}</option>
+              {% endfor %}
+            </optgroup>
+            {% if contractor_choices %}
+            <optgroup label="Contractors">
+              {% for name, label in contractor_choices %}
+              <option value="{{ name }}" {{ 'selected' if form.work_lead.data == name }}>{{ label }}</option>
+              {% endfor %}
+            </optgroup>
+            {% endif %}
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin-top:.5rem">
+        {{ form.scope_of_work.label }}{{ form.scope_of_work(rows=3) }}
+      </div>
+    </div>
+
+    {# ── 2. Pre-Job Safety ──────────────────────────────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">Pre-Job Safety</h3>
+      <div class="swp-grid-2">
+        <div class="field">{{ form.first_time.label }}{{ form.first_time(class="select-field") }}</div>
+        <div class="field">{{ form.training.label }}{{ form.training(class="select-field") }}</div>
+        <div class="field">{{ form.inspection.label }}{{ form.inspection(class="select-field") }}</div>
+        <div class="field">{{ form.continuation.label }}{{ form.continuation(class="select-field") }}</div>
+      </div>
+    </div>
+
+    {# ── 3. Hazard Energy Types ─────────────────────────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">Hazard Energy Types</h3>
+      <div class="check-grid">
+        {% for field in [form.he_electrical, form.he_mechanical, form.he_thermal,
+                         form.he_pressure, form.he_motion, form.he_gravity,
+                         form.he_chemical, form.he_radiation, form.he_biological, form.he_noise] %}
+        <label class="check-item">{{ field() }}<span>{{ field.label.text }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# ── 4. PPE Required ────────────────────────────────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">PPE Required</h3>
+      <div class="check-grid">
+        {% for field in [form.ppe_hard_hat, form.ppe_safety_glasses, form.ppe_gloves,
+                         form.ppe_fr_clothing, form.ppe_arc_flash_suit, form.ppe_arc_flash_hood,
+                         form.ppe_insul_gloves, form.ppe_face_shield, form.ppe_hearing_prot,
+                         form.ppe_respirator, form.ppe_safety_shoes, form.ppe_fall_protect,
+                         form.ppe_cut_protect, form.ppe_welding_hood, form.ppe_brine_gear,
+                         form.ppe_chem_res_cloth, form.ppe_chem_res_gloves, form.ppe_chem_res_boot] %}
+        <label class="check-item">{{ field() }}<span>{{ field.label.text }}</span></label>
+        {% endfor %}
+        {% set _has_ppe2 = form.ppe_other2.data or form.ppe_other2_txt.data %}
+        <div style="grid-column:span 2;display:flex;align-items:center;gap:.5rem;">
+          <label class="check-item check-with-text" style="flex:1;min-width:0;">
+            {{ form.ppe_other1() }}<span>Other:</span>
+            {{ form.ppe_other1_txt(placeholder="Specify") }}
+          </label>
+          <button type="button" class="btn-link" id="ppe-add-other-btn"
+                  style="white-space:nowrap;flex-shrink:0;{{ 'display:none;' if _has_ppe2 }}"
+                  hx-get="{{ url_for('swp.other_row', section='ppe', checked=('1' if form.ppe_other2.data else '0'), txt=(form.ppe_other2_txt.data or '')) }}"
+                  hx-target="#ppe-other2-slot"
+                  hx-swap="outerHTML"
+                  {{ 'hx-trigger="load, click"' if _has_ppe2 }}>+ Add another Other</button>
+        </div>
+        <label id="ppe-other2-slot" class="check-item check-with-text" style="display:none;grid-column:span 2;"></label>
+      </div>
+    </div>
+
+    {# ── 5. Task Hazard Assessment ──────────────────────────────────────────── #}
+    {{ form.permit_hot_work(type="hidden") }}
+    {{ form.permit_electrical(type="hidden") }}
+    {{ form.permit_confined_sp(type="hidden") }}
+    {{ form.permit_excavation(type="hidden") }}
+    {{ form.permit_other(type="hidden") }}
+    <div class="swp-section">
+      <h3 class="section-title">Task Hazard Assessment</h3>
+      <div class="check-grid">
+        <label class="check-item">
+          <input type="checkbox" id="tha_loto" name="tha_loto" value="y"
+                 {{ 'checked' if form.tha_loto.data }}>
+          <span>LOTO</span>
+        </label>
+        {% for field in [form.tha_confined_space, form.tha_elevated_work,
+                         form.tha_hot_work, form.tha_vehicles, form.tha_mobile_equip,
+                         form.tha_heavy_equip, form.tha_power_tools, form.tha_slips_trips,
+                         form.tha_nip_pinch, form.tha_break_sys_integ, form.tha_ergonomics,
+                         form.tha_extreme_heat, form.tha_extreme_cold, form.tha_high_wind,
+                         form.tha_rain_snow] %}
+        <label class="check-item">{{ field() }}<span>{{ field.label.text }}</span></label>
+        {% endfor %}
+        <label class="check-item check-with-text">
+          {{ form.tha_other() }}<span>Other:</span>
+          {{ form.tha_other_txt(placeholder="Specify") }}
+        </label>
+      </div>
+    </div>
+
+    {# ── Associated Permits — shown by CSS :has() when #tha_loto is checked ── #}
+    <datalist id="loto-list">
+      {% for l in available_lotos %}<option value="{{ l.loto_number }}">{% endfor %}
+    </datalist>
+    <div id="loto-permit-section">
+      <div class="swp-section">
+        <h3 class="section-title">Associated Permits</h3>
+        <div class="swp-grid-3">
+          <div class="field">
+            {{ form.permit_loto.label }}
+            {{ form.permit_loto(placeholder="LOTO permit #", list="loto-list") }}
+            {% for l in linked_lotos %}
+            <a href="{{ url_for('loto.edit', loto_id=l.id) }}"
+               style="display:block;margin-top:.35rem;font-size:.82rem;color:var(--border-lt);">
+              Linked: {{ l.loto_number }}
+              <span class="badge badge-loto-{{ l.status }}" style="font-size:.7rem;padding:.1rem .4rem;">{{ l.status }}</span>
+            </a>
+            {% endfor %}
+            <div id="loto-create-nudge" style="margin-top:.5rem;">
+              {% if not linked_lotos and (not swp or swp.status in ('draft', 'pending')) %}
+                {% if swp %}
+                <a href="{{ url_for('loto.new', from_swp=swp.id) }}" class="btn-secondary" style="font-size:.82rem;padding:.3rem .7rem;">+ Create LOTO for this SWP</a>
+                {% else %}
+                <span style="font-size:.82rem;color:var(--text-sec);">Save the form to create a linked LOTO.</span>
+                {% endif %}
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ── 6. Task Safeguards ────────────────────────────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">Task Safeguards</h3>
+      <div class="check-grid">
+        {% for field in [form.ts_review_procedures, form.ts_valve_positions, form.ts_cross_connects,
+                         form.ts_barricade, form.ts_adjacent_work, form.ts_haz_comm,
+                         form.ts_addl_permits, form.ts_equip_inspect, form.ts_high_temp_lines,
+                         form.ts_min_approach, form.ts_safety_observer, form.ts_slings_lifting] %}
+        <label class="check-item">{{ field() }}<span>{{ field.label.text }}</span></label>
+        {% endfor %}
+        {% set _has_ts2 = form.ts_other2.data or form.ts_other2_txt.data %}
+        <div style="grid-column:span 2;display:flex;align-items:center;gap:.5rem;">
+          <label class="check-item check-with-text" style="flex:1;min-width:0;">
+            {{ form.ts_other1() }}<span>Other:</span>
+            {{ form.ts_other1_txt(placeholder="Specify") }}
+          </label>
+          <button type="button" class="btn-link" id="ts-add-other-btn"
+                  style="white-space:nowrap;flex-shrink:0;{{ 'display:none;' if _has_ts2 }}"
+                  hx-get="{{ url_for('swp.other_row', section='ts', checked=('1' if form.ts_other2.data else '0'), txt=(form.ts_other2_txt.data or '')) }}"
+                  hx-target="#ts-other2-slot"
+                  hx-swap="outerHTML"
+                  {{ 'hx-trigger="load, click"' if _has_ts2 }}>+ Add another Other</button>
+        </div>
+        <label id="ts-other2-slot" class="check-item check-with-text" style="display:none;grid-column:span 2;"></label>
+      </div>
+    </div>
+
+    {# ── 7. Mitigation & Comments ──────────────────────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">Mitigation &amp; Comments</h3>
+      <div class="field">{{ form.hazard_mitigation.label }}{{ form.hazard_mitigation(rows=3) }}</div>
+      <div class="field" style="margin-top:.75rem">{{ form.additional_comments.label }}{{ form.additional_comments(rows=3) }}</div>
+    </div>
+
+    {# ── 8. Attendees ─────────────────────────────────────────────────────── #}
+    <datalist id="person-list">
+      {% for name in staff_names %}<option value="{{ name }}">{% endfor %}
+      {% for name, label in contractor_choices %}<option value="{{ name }}">{% endfor %}
+    </datalist>
+    <div class="swp-section">
+      <h3 class="section-title">Attendees</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:2rem">#</th>
+              <th>Name</th>
+              <th>Company</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="attendee-body">
+            {% for i in range(attendee_count) %}
+            {% set a = attendees_by_pos.get(i) %}
+            <tr>
+              <td class="td-num">{{ i + 1 }}</td>
+              <td><input type="text" name="attend_name_{{ i }}" class="td-input"
+                         list="person-list"
+                         value="{{ a.name if a else '' }}" placeholder="Full name"></td>
+              <td><input type="text" name="attend_company_{{ i }}" class="td-input"
+                         value="{{ a.company if a else '' }}" placeholder="Company"></td>
+              <td><input type="date" name="attend_date_{{ i }}" class="td-input"
+                         value="{{ a.date if a else '' }}"></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <input type="hidden" id="next-row-idx" name="idx" value="{{ attendee_count }}">
+      <button type="button" class="btn-secondary" style="margin-top:.75rem; width:auto;"
+              hx-get="{{ url_for('swp.attendee_row') }}"
+              hx-include="#next-row-idx"
+              hx-target="#attendee-body"
+              hx-swap="beforeend">
+        + Add Row
+      </button>
+    </div>
+
+    {# ── Form Actions ─────────────────────────────────────────────────────── #}
+    <div id="form-actions" class="form-actions">
+      <a href="{{ url_for('swp.index') }}" class="btn-secondary">Cancel</a>
+      {% if swp %}
+      <a href="{{ url_for('pdf.swp_pdf', swp_id=swp.id) }}" class="btn-secondary"
+         style="width:auto;" target="_blank">Download PDF</a>
+      <a href="{{ url_for('swp.review', swp_id=swp.id) }}" class="btn-primary" style="width:auto;">Review &amp; Submit</a>
+      {% else %}
+      <span class="btn-primary btn-disabled" style="width:auto;" title="Fill out a field to enable auto-save first">Review &amp; Submit</span>
+      {% endif %}
+    </div>
+  </form>
+</div>
+
+<script src="{{ url_for('static', filename='forms.js') }}" defer></script>
+{% endblock %}

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Sign — LOTO / SWP{% endblock %}
+{% block content %}
+<div class="page-header">
+  <a href="{{ url_for('signatures.index') }}" class="btn btn-secondary">← Back</a>
+  <h1>
+    {% if sig.physical_only %}Acknowledge Physical Step{% else %}Digital Signature{% endif %}
+  </h1>
+</div>
+
+<div class="card" style="max-width:42rem;margin:0 auto">
+  <h2 class="section-title">
+    {{ sig.permit_type | upper }} #{{ sig.permit_id }}
+    &mdash; {{ sig.signature_role | replace('_', ' ') | title }}
+  </h2>
+
+  {% if permit %}
+  <dl class="detail-grid">
+    {% if sig.permit_type == 'swp' %}
+      <dt>Permit #</dt><dd>{{ permit.permit_number or '—' }}</dd>
+      <dt>Plant</dt><dd>{{ permit.plant or '—' }}</dd>
+      <dt>Date</dt><dd>{{ permit.date or '—' }}</dd>
+      <dt>Location</dt><dd>{{ permit.location or '—' }}</dd>
+      <dt>Work Lead</dt><dd>{{ permit.work_lead or '—' }}</dd>
+      <dt>Scope of Work</dt><dd>{{ permit.scope_of_work or '—' }}</dd>
+      <dt>Status</dt><dd><span class="badge badge-swp-{{ permit.status }}">{{ permit.status | title }}</span></dd>
+    {% else %}
+      <dt>LOTO #</dt><dd>{{ permit.loto_number or '—' }}</dd>
+      <dt>Plant</dt><dd>{{ permit.plant or '—' }}</dd>
+      <dt>Date</dt><dd>{{ permit.date or '—' }}</dd>
+      <dt>Location</dt><dd>{{ permit.location or '—' }}</dd>
+      <dt>Group Leader</dt><dd>{{ permit.group_leader or '—' }}</dd>
+      <dt>Job Description</dt><dd>{{ permit.job_description or '—' }}</dd>
+      <dt>Status</dt><dd><span class="badge badge-loto-{{ permit.status }}">{{ permit.status | title }}</span></dd>
+    {% endif %}
+  </dl>
+  {% endif %}
+
+  <hr style="border:none;border-top:1px solid var(--border);margin:1.25rem 0">
+
+  {% if sig.status != 'pending' %}
+    <p class="muted">This request has already been <strong>{{ sig.status }}</strong>.</p>
+    <a href="{{ url_for('signatures.index') }}" class="btn">Back to My Signatures</a>
+
+  {% elif sig.physical_only %}
+    <p>By clicking <strong>Acknowledge</strong> below, you confirm that the physical step
+    described above has been completed.</p>
+    <form method="post" action="{{ url_for('signatures.acknowledge', sig_id=sig.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-primary" style="margin-top:.75rem">
+        Acknowledge Physical Step
+      </button>
+    </form>
+
+  {% else %}
+    <p>Type your full name below to apply your digital signature.</p>
+    <form method="post" action="{{ url_for('signatures.sign', sig_id=sig.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-group" style="margin-top:.75rem">
+        <label for="signature_data">Full Name</label>
+        <input type="text" id="signature_data" name="signature_data"
+               placeholder="Type your full name" autocomplete="name"
+               style="width:100%;max-width:24rem" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="margin-top:.75rem">
+        Apply Signature
+      </button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% if show %}
+<div class="swp-section">
+  <h3 class="section-title">Associated Permits</h3>
+  <div class="field" style="max-width:340px;">
+    <label for="permit_loto">LOTO Permit #</label>
+    <select name="permit_loto" id="permit_loto" class="select-field">
+      <option value="">— None —</option>
+      {% for num in loto_numbers %}
+      <option value="{{ num }}" {{ 'selected' if current_loto == num }}>{{ num }}</option>
+      {% endfor %}
+      {% if current_loto and current_loto not in loto_numbers and current_loto != '_new_' %}
+      <option value="{{ current_loto }}" selected>{{ current_loto }}</option>
+      {% endif %}
+      <option value="_new_" {{ 'selected' if current_loto == '_new_' }}>+ Create new LOTO permit</option>
+    </select>
+  </div>
+</div>
+{% else %}
+<input type="hidden" name="permit_loto" value="{{ current_loto }}">
+{% endif %}

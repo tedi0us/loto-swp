@@ -1,0 +1,31 @@
+<div class="equip-picker">
+  <div class="equip-picker-header">
+    <h3 class="equip-picker-title">Select Equipment</h3>
+    <button type="button" class="equip-dialog-close-btn" aria-label="Close">✕</button>
+  </div>
+
+  <div class="equip-search-wrap">
+    <input type="search" name="q"
+           class="equip-search-input"
+           placeholder="Search by name, tag, make, model…"
+           autocomplete="off"
+           hx-get="{{ url_for('equipment.search') }}"
+           hx-trigger="input changed delay:300ms, search"
+           hx-target="#equip-search-results"
+           hx-include="this, #equip-plant-hidden">
+    <input type="hidden" id="equip-plant-hidden" name="plant" value="{{ plant }}">
+  </div>
+
+  <div id="equip-search-results" class="equip-search-results">
+    <p class="equip-no-results">Type to search existing equipment.</p>
+  </div>
+
+  <div class="equip-picker-footer">
+    <button type="button" class="btn-secondary" style="width:auto;"
+            hx-get="{{ url_for('equipment.new_form', plant=plant) }}"
+            hx-target="#equipment-dialog-body"
+            hx-swap="innerHTML">
+      + Create New Equipment
+    </button>
+  </div>
+</div>

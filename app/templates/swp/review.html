@@ -1,0 +1,488 @@
+{% extends "base.html" %}
+{% block title %}Review SWP{% if swp.permit_number %} {{ swp.permit_number }}{% endif %} — LOTO / SWP{% endblock %}
+
+{% block content %}
+<div class="swp-form">
+
+  {# ── Action bar ──────────────────────────────────────────────────────────── #}
+  <div class="review-actions">
+    {% if swp.status == 'draft' %}
+    <a href="{{ url_for('swp.edit', swp_id=swp.id) }}" class="btn-secondary">← Back to Edit</a>
+    {% elif swp.status in ('pending','pending_operator') %}
+    <a href="{{ url_for('swp.index', show=swp.status) }}" class="btn-secondary">← Back</a>
+    {% else %}
+    <a href="{{ url_for('swp.index') }}" class="btn-secondary">← Safe Work Permits</a>
+    {% endif %}
+
+    {% if swp.status in ('issued','closed') or is_admin %}
+    <a href="{{ url_for('pdf.swp_pdf', swp_id=swp.id) }}" class="btn-secondary"
+       style="width:auto;" target="_blank">Download PDF</a>
+    <span hx-get="{{ url_for('pdf.printer_status', type='swp', id=swp.id) }}"
+          hx-trigger="load" hx-swap="outerHTML">
+      <button class="btn-secondary" disabled style="width:auto;opacity:.45;">Print</button>
+    </span>
+    {% endif %}
+
+    {% if is_creator and swp.status == 'draft' %}
+    <form method="post" action="{{ url_for('swp.submit', swp_id=swp.id) }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn-primary" style="width:auto;">Confirm &amp; Submit</button>
+    </form>
+    {% endif %}
+
+    {% if current_user.role in ('operator','admin','it_admin') and swp.status == 'pending_operator' %}
+    <form method="post" action="{{ url_for('swp.forward', swp_id=swp.id) }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn-primary" style="width:auto;">Forward to Management</button>
+    </form>
+    {% endif %}
+
+    {% if is_admin and swp.status == 'pending' %}
+    <form method="post" action="{{ url_for('swp.approve', swp_id=swp.id) }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn-primary" style="width:auto;background:var(--success);">Approve &amp; Issue</button>
+    </form>
+    {% endif %}
+
+    {% if (is_creator or is_admin) and swp.status in ('pending','pending_operator') %}
+    <form method="post" action="{{ url_for('swp.recall', swp_id=swp.id) }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn-secondary">Recall to Draft</button>
+    </form>
+    {% endif %}
+  </div>
+
+  {# ── Header ──────────────────────────────────────────────────────────────── #}
+  <div class="form-header" style="margin-bottom:1rem;">
+    <h2>Safe Work Permit</h2>
+    {% set _sl = swp.status | replace('pending_operator','Pending Operator') | replace('pending','Pending Management') | title %}
+    <span class="badge badge-{{ swp.status }}">{{ _sl }}</span>
+    {% if swp.is_backdated %}
+    <span class="badge badge-historical" title="Historical record">Historical</span>
+    {% endif %}
+  </div>
+
+  {# ── Permit meta ─────────────────────────────────────────────────────────── #}
+  <div class="swp-section">
+    <h3 class="section-title">Permit Details</h3>
+    <div class="swp-grid-3">
+      <div class="review-field">
+        <div class="review-label">Permit #</div>
+        <div class="review-value">{{ swp.permit_number or '— Not yet assigned —' }}</div>
+      </div>
+      <div class="review-field">
+        <div class="review-label">Plant</div>
+        <div class="review-value">{{ swp.plant or '—' }}</div>
+      </div>
+      <div class="review-field">
+        <div class="review-label">Status</div>
+        <div class="review-value"><span class="badge badge-{{ swp.status }}">{{ swp.status | title }}</span></div>
+      </div>
+      <div class="review-field">
+        <div class="review-label">Date</div>
+        <div class="review-value">{{ swp.date or '—' }}</div>
+      </div>
+      <div class="review-field">
+        <div class="review-label">Time</div>
+        <div class="review-value">{{ swp.time or '—' }}</div>
+      </div>
+      <div class="review-field">
+        <div class="review-label">Location</div>
+        <div class="review-value">{{ swp.location or '—' }}</div>
+      </div>
+      <div class="review-field">
+        <div class="review-label">Company</div>
+        <div class="review-value">{{ swp.company or '—' }}</div>
+      </div>
+      <div class="review-field">
+        <div class="review-label">Work Lead</div>
+        <div class="review-value">{{ swp.work_lead or '—' }}</div>
+      </div>
+    </div>
+    {% if swp.scope_of_work %}
+    <div class="review-field" style="margin-top:1rem;">
+      <div class="review-label">Scope of Work</div>
+      <div class="review-value" style="white-space:pre-wrap;">{{ swp.scope_of_work }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  {# ── Pre-job ─────────────────────────────────────────────────────────────── #}
+  {% set first_time_map = {'1': 'Yes', '0': 'No'} %}
+  <div class="swp-section">
+    <h3 class="section-title">Pre-Job Safety</h3>
+    <div class="swp-grid-2">
+      <div class="review-field">
+        <div class="review-label">First time performing this work?</div>
+        <div class="review-value">{{ first_time_map.get(swp.first_time, '—') }}</div>
+      </div>
+      <div class="review-field">
+        <div class="review-label">Training complete?</div>
+        <div class="review-value">{{ first_time_map.get(swp.training, '—') }}</div>
+      </div>
+      <div class="review-field">
+        <div class="review-label">Pre-job inspection done?</div>
+        <div class="review-value">{{ first_time_map.get(swp.inspection, '—') }}</div>
+      </div>
+      <div class="review-field">
+        <div class="review-label">Continuation permit?</div>
+        <div class="review-value">{{ first_time_map.get(swp.continuation, '—') }}</div>
+      </div>
+    </div>
+  </div>
+
+  {# ── Hazard energy ───────────────────────────────────────────────────────── #}
+  {% set he_items = [] %}
+  {% if swp.he_electrical %}{% set _ = he_items.append('Electrical') %}{% endif %}
+  {% if swp.he_mechanical %}{% set _ = he_items.append('Mechanical') %}{% endif %}
+  {% if swp.he_thermal %}{% set _ = he_items.append('Thermal') %}{% endif %}
+  {% if swp.he_pressure %}{% set _ = he_items.append('Pressure') %}{% endif %}
+  {% if swp.he_motion %}{% set _ = he_items.append('Motion') %}{% endif %}
+  {% if swp.he_gravity %}{% set _ = he_items.append('Gravity') %}{% endif %}
+  {% if swp.he_chemical %}{% set _ = he_items.append('Chemical') %}{% endif %}
+  {% if swp.he_radiation %}{% set _ = he_items.append('Radiation') %}{% endif %}
+  {% if swp.he_biological %}{% set _ = he_items.append('Biological') %}{% endif %}
+  {% if swp.he_noise %}{% set _ = he_items.append('Noise') %}{% endif %}
+  <div class="swp-section">
+    <h3 class="section-title">Hazard Energy Types</h3>
+    <div class="review-value">
+      {% if he_items %}{{ he_items | join(', ') }}{% else %}<span style="color:var(--muted)">None selected</span>{% endif %}
+    </div>
+  </div>
+
+  {# ── PPE ─────────────────────────────────────────────────────────────────── #}
+  {% set ppe_items = [] %}
+  {% if swp.ppe_hard_hat %}{% set _ = ppe_items.append('Hard Hat') %}{% endif %}
+  {% if swp.ppe_safety_glasses %}{% set _ = ppe_items.append('Safety Glasses') %}{% endif %}
+  {% if swp.ppe_gloves %}{% set _ = ppe_items.append('Gloves') %}{% endif %}
+  {% if swp.ppe_fr_clothing %}{% set _ = ppe_items.append('FR Clothing') %}{% endif %}
+  {% if swp.ppe_arc_flash_suit %}{% set _ = ppe_items.append('Arc Flash Suit') %}{% endif %}
+  {% if swp.ppe_arc_flash_hood %}{% set _ = ppe_items.append('Arc Flash Hood') %}{% endif %}
+  {% if swp.ppe_insul_gloves %}{% set _ = ppe_items.append('Insulating Gloves') %}{% endif %}
+  {% if swp.ppe_face_shield %}{% set _ = ppe_items.append('Face Shield') %}{% endif %}
+  {% if swp.ppe_hearing_prot %}{% set _ = ppe_items.append('Hearing Protection') %}{% endif %}
+  {% if swp.ppe_respirator %}{% set _ = ppe_items.append('Respirator') %}{% endif %}
+  {% if swp.ppe_safety_shoes %}{% set _ = ppe_items.append('Safety Shoes') %}{% endif %}
+  {% if swp.ppe_fall_protect %}{% set _ = ppe_items.append('Fall Protection') %}{% endif %}
+  {% if swp.ppe_cut_protect %}{% set _ = ppe_items.append('Cut Protection') %}{% endif %}
+  {% if swp.ppe_welding_hood %}{% set _ = ppe_items.append('Welding Hood') %}{% endif %}
+  {% if swp.ppe_brine_gear %}{% set _ = ppe_items.append('Brine Gear') %}{% endif %}
+  {% if swp.ppe_chem_res_cloth %}{% set _ = ppe_items.append('Chem-Resistant Clothing') %}{% endif %}
+  {% if swp.ppe_chem_res_gloves %}{% set _ = ppe_items.append('Chem-Resistant Gloves') %}{% endif %}
+  {% if swp.ppe_chem_res_boot %}{% set _ = ppe_items.append('Chem-Resistant Boots') %}{% endif %}
+  {% if swp.ppe_other1 and swp.ppe_other1_txt %}{% set _ = ppe_items.append('Other: ' ~ swp.ppe_other1_txt) %}{% elif swp.ppe_other1 %}{% set _ = ppe_items.append('Other') %}{% endif %}
+  {% if swp.ppe_other2 and swp.ppe_other2_txt %}{% set _ = ppe_items.append('Other: ' ~ swp.ppe_other2_txt) %}{% elif swp.ppe_other2 %}{% set _ = ppe_items.append('Other 2') %}{% endif %}
+  <div class="swp-section">
+    <h3 class="section-title">PPE Required</h3>
+    <div class="review-value">
+      {% if ppe_items %}{{ ppe_items | join(', ') }}{% else %}<span style="color:var(--muted)">None selected</span>{% endif %}
+    </div>
+  </div>
+
+  {# ── THA ─────────────────────────────────────────────────────────────────── #}
+  {% set tha_items = [] %}
+  {% if swp.tha_loto %}{% set _ = tha_items.append('LOTO') %}{% endif %}
+  {% if swp.tha_confined_space %}{% set _ = tha_items.append('Confined Space') %}{% endif %}
+  {% if swp.tha_elevated_work %}{% set _ = tha_items.append('Elevated Work') %}{% endif %}
+  {% if swp.tha_hot_work %}{% set _ = tha_items.append('Hot Work') %}{% endif %}
+  {% if swp.tha_vehicles %}{% set _ = tha_items.append('Vehicles') %}{% endif %}
+  {% if swp.tha_mobile_equip %}{% set _ = tha_items.append('Mobile Equipment') %}{% endif %}
+  {% if swp.tha_heavy_equip %}{% set _ = tha_items.append('Heavy Equipment') %}{% endif %}
+  {% if swp.tha_power_tools %}{% set _ = tha_items.append('Power Tools') %}{% endif %}
+  {% if swp.tha_slips_trips %}{% set _ = tha_items.append('Slips / Trips / Falls') %}{% endif %}
+  {% if swp.tha_nip_pinch %}{% set _ = tha_items.append('Nip / Pinch Points') %}{% endif %}
+  {% if swp.tha_break_sys_integ %}{% set _ = tha_items.append('Breaking System Integrity') %}{% endif %}
+  {% if swp.tha_ergonomics %}{% set _ = tha_items.append('Ergonomics') %}{% endif %}
+  {% if swp.tha_extreme_heat %}{% set _ = tha_items.append('Extreme Heat') %}{% endif %}
+  {% if swp.tha_extreme_cold %}{% set _ = tha_items.append('Extreme Cold') %}{% endif %}
+  {% if swp.tha_high_wind %}{% set _ = tha_items.append('High Wind') %}{% endif %}
+  {% if swp.tha_rain_snow %}{% set _ = tha_items.append('Rain / Snow') %}{% endif %}
+  {% if swp.tha_other and swp.tha_other_txt %}{% set _ = tha_items.append('Other: ' ~ swp.tha_other_txt) %}{% elif swp.tha_other %}{% set _ = tha_items.append('Other') %}{% endif %}
+  <div class="swp-section">
+    <h3 class="section-title">Task Hazard Assessment</h3>
+    <div class="review-value">
+      {% if tha_items %}{{ tha_items | join(', ') }}{% else %}<span style="color:var(--muted)">None selected</span>{% endif %}
+    </div>
+    {% if swp.tha_loto %}
+    <div class="review-field" style="margin-top:1rem;">
+      <div class="review-label">LOTO Permit</div>
+      <div class="review-value">
+        {% if linked_lotos %}
+          {% for l in linked_lotos %}
+          <a href="{{ url_for('loto.edit', loto_id=l.id) }}" style="color:var(--border-lt);">
+            {{ l.loto_number }}
+          </a>
+          <span class="badge badge-loto-{{ l.status }}" style="font-size:.75rem;">{{ l.status | title }}</span>
+          {% if not loop.last %}<br>{% endif %}
+          {% endfor %}
+        {% elif swp.permit_loto %}
+          <span style="color:var(--muted)">{{ swp.permit_loto }}</span>
+          <span style="font-size:.8rem;color:var(--muted);margin-left:.5rem;">(not found in system)</span>
+        {% else %}
+          <span style="color:var(--muted)">None linked</span>
+          {% if swp.status == 'draft' %}
+          <a href="{{ url_for('loto.new', from_swp=swp.id) }}"
+             class="btn-secondary" style="font-size:.82rem;padding:.25rem .6rem;margin-left:.75rem;width:auto;">
+            Create LOTO →
+          </a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  {# ── Task safeguards ─────────────────────────────────────────────────────── #}
+  {% set ts_items = [] %}
+  {% if swp.ts_review_procedures %}{% set _ = ts_items.append('Review Procedures') %}{% endif %}
+  {% if swp.ts_valve_positions %}{% set _ = ts_items.append('Verify Valve Positions') %}{% endif %}
+  {% if swp.ts_cross_connects %}{% set _ = ts_items.append('Check Cross-Connects') %}{% endif %}
+  {% if swp.ts_barricade %}{% set _ = ts_items.append('Barricade Area') %}{% endif %}
+  {% if swp.ts_adjacent_work %}{% set _ = ts_items.append('Adjacent Work Review') %}{% endif %}
+  {% if swp.ts_haz_comm %}{% set _ = ts_items.append('Hazard Communication') %}{% endif %}
+  {% if swp.ts_addl_permits %}{% set _ = ts_items.append('Additional Permits') %}{% endif %}
+  {% if swp.ts_equip_inspect %}{% set _ = ts_items.append('Equipment Inspection') %}{% endif %}
+  {% if swp.ts_high_temp_lines %}{% set _ = ts_items.append('High-Temp Line Check') %}{% endif %}
+  {% if swp.ts_min_approach %}{% set _ = ts_items.append('Minimum Approach Distance') %}{% endif %}
+  {% if swp.ts_safety_observer %}{% set _ = ts_items.append('Safety Observer') %}{% endif %}
+  {% if swp.ts_slings_lifting %}{% set _ = ts_items.append('Slings / Lifting Devices') %}{% endif %}
+  {% if swp.ts_other1 and swp.ts_other1_txt %}{% set _ = ts_items.append('Other: ' ~ swp.ts_other1_txt) %}{% elif swp.ts_other1 %}{% set _ = ts_items.append('Other') %}{% endif %}
+  {% if swp.ts_other2 and swp.ts_other2_txt %}{% set _ = ts_items.append('Other: ' ~ swp.ts_other2_txt) %}{% elif swp.ts_other2 %}{% set _ = ts_items.append('Other 2') %}{% endif %}
+  <div class="swp-section">
+    <h3 class="section-title">Task Safeguards</h3>
+    <div class="review-value">
+      {% if ts_items %}{{ ts_items | join(', ') }}{% else %}<span style="color:var(--muted)">None selected</span>{% endif %}
+    </div>
+  </div>
+
+  {# ── Mitigation & Comments ───────────────────────────────────────────────── #}
+  {% if swp.hazard_mitigation or swp.additional_comments %}
+  <div class="swp-section">
+    <h3 class="section-title">Mitigation &amp; Comments</h3>
+    {% if swp.hazard_mitigation %}
+    <div class="review-field">
+      <div class="review-label">Hazard Mitigation</div>
+      <div class="review-value" style="white-space:pre-wrap;">{{ swp.hazard_mitigation }}</div>
+    </div>
+    {% endif %}
+    {% if swp.additional_comments %}
+    <div class="review-field" style="margin-top:.75rem;">
+      <div class="review-label">Additional Comments</div>
+      <div class="review-value" style="white-space:pre-wrap;">{{ swp.additional_comments }}</div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {# ── Attendees ───────────────────────────────────────────────────────────── #}
+  {% if attendees %}
+  <div class="swp-section">
+    <h3 class="section-title">Attendees</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:2rem">#</th>
+            <th>Name</th>
+            <th>Company</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in attendees %}
+          <tr>
+            <td class="td-num">{{ loop.index }}</td>
+            <td>{{ a.name or '—' }}</td>
+            <td>{{ a.company or '—' }}</td>
+            <td>{{ a.date or '—' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Historical info ─────────────────────────────────────────────────────── #}
+  {% if swp.is_backdated %}
+  <div class="swp-section historical-section">
+    <h3 class="section-title">Historical Record</h3>
+    <div class="review-field">
+      <div class="review-label">Source / Reference</div>
+      <div class="review-value">{{ swp.backdate_note or '—' }}</div>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Issued signatures ───────────────────────────────────────────────────── #}
+  {% if swp.status in ('issued', 'closed') %}
+  <div class="swp-section">
+    <h3 class="section-title">Issued</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div>
+        <div class="review-label">Authorizer Name</div>
+        <div class="review-value">{{ swp.issued_auth_name or '—' }}</div>
+      </div>
+      <div>
+        <div class="review-label">Authorizer Signature</div>
+        <div class="review-value">{{ swp.issued_auth_sig or '—' }}</div>
+      </div>
+      <div>
+        <div class="review-label">Work Lead Name</div>
+        <div class="review-value">{{ swp.issued_wl_name or '—' }}</div>
+      </div>
+      <div>
+        <div class="review-label">Work Lead Signature</div>
+        <div class="review-value">{{ swp.issued_wl_sig or '—' }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Closed signatures ───────────────────────────────────────────────────── #}
+  {% if swp.status == 'closed' %}
+  <div class="swp-section">
+    <h3 class="section-title">Closed</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div>
+        <div class="review-label">Authorizer Name</div>
+        <div class="review-value">{{ swp.closed_auth_name or '—' }}</div>
+      </div>
+      <div>
+        <div class="review-label">Authorizer Signature</div>
+        <div class="review-value">{{ swp.closed_auth_sig or '—' }}</div>
+      </div>
+      <div>
+        <div class="review-label">Work Lead Name</div>
+        <div class="review-value">{{ swp.closed_wl_name or '—' }}</div>
+      </div>
+      <div>
+        <div class="review-label">Work Lead Signature</div>
+        <div class="review-value">{{ swp.closed_wl_sig or '—' }}</div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Continuation Documents (issued SWPs only) ──────────────────────────── #}
+  {% if swp.status == 'issued' %}
+  <div class="swp-section">
+    <h3 class="section-title">Continuation Documents</h3>
+
+    {% if swp.continuation == '1' or swp.continuation == 1 %}
+    <div id="pjsm-list"
+         hx-get="{{ url_for('swp_cont.pjsm_list', swp_id=swp.id) }}"
+         hx-trigger="load"
+         hx-swap="innerHTML">
+      <span class="save-indicator" style="color:var(--warning);">
+        &#9888; Continuation Sheet Required — no SWP-02 on file yet
+      </span>
+    </div>
+    {% else %}
+    <div id="pjsm-list"
+         hx-get="{{ url_for('swp_cont.pjsm_list', swp_id=swp.id) }}"
+         hx-trigger="load"
+         hx-swap="innerHTML">
+      Loading…
+    </div>
+    {% endif %}
+
+    <div id="work-list"
+         hx-get="{{ url_for('swp_cont.work_list', swp_id=swp.id) }}"
+         hx-trigger="load"
+         hx-swap="innerHTML">
+      Loading…
+    </div>
+
+    <div style="display:flex;gap:.75rem;margin-top:1rem;flex-wrap:wrap;">
+      <a href="{{ url_for('swp_cont.pjsm_new', swp_id=swp.id) }}" class="btn-secondary" style="width:auto;">
+        + SWP-02 PJSM Continuation
+      </a>
+      <a href="{{ url_for('swp_cont.work_new', swp_id=swp.id) }}" class="btn-secondary" style="width:auto;">
+        + SWP-05 Work Continuation
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── Signature Requests ──────────────────────────────────────────────────── #}
+  {% if sig_requests %}
+  <div class="review-section" style="margin-top:1.25rem">
+    <h3 class="section-title">Signatures</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Role</th>
+          <th>Recipient</th>
+          <th>Status</th>
+          <th>Signed As</th>
+          <th>Signing Link</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sig_requests %}
+        <tr>
+          <td>{{ s.signature_role | replace('_',' ') | title }}</td>
+          <td>{{ s.recipient_name }}</td>
+          <td>
+            {% if s.status == 'signed' %}
+              <span class="badge badge-ok">Signed</span>
+            {% elif s.status == 'pending' %}
+              <span class="badge badge-warn">Pending</span>
+            {% else %}
+              <span class="badge">{{ s.status | title }}</span>
+            {% endif %}
+          </td>
+          <td class="td-mono">{{ s.signature_data or '—' }}</td>
+          <td>
+            {% if s.token and s.status == 'pending' %}
+            <button type="button"
+                    class="btn btn-sm btn-secondary"
+                    onclick="navigator.clipboard.writeText('{{ request.host_url.rstrip('/') }}{{ url_for('signatures.sign_via_token', token=s.token) }}').then(()=>{this.textContent='Copied!';setTimeout(()=>{this.textContent='Copy Link'},2000)})">
+              Copy Link
+            </button>
+            {% elif s.status == 'signed' %}
+              <span class="muted" style="font-size:.8rem">Used</span>
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {# ── Bottom action bar (repeat for long pages) ───────────────────────────── #}
+  <div class="review-actions" style="margin-top:1.25rem;">
+    {% if swp.status == 'draft' %}
+    <a href="{{ url_for('swp.edit', swp_id=swp.id) }}" class="btn-secondary">← Back to Edit</a>
+    {% else %}
+    <a href="{{ url_for('swp.index') }}" class="btn-secondary">← Safe Work Permits</a>
+    {% endif %}
+
+    {% if is_creator and swp.status == 'draft' %}
+    <form method="post" action="{{ url_for('swp.submit', swp_id=swp.id) }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn-primary" style="width:auto;">Confirm &amp; Submit</button>
+    </form>
+    {% endif %}
+
+    {% if is_admin and swp.status == 'pending' %}
+    <form method="post" action="{{ url_for('swp.approve', swp_id=swp.id) }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn-primary" style="width:auto;background:var(--success);">Approve &amp; Issue</button>
+    </form>
+    {% endif %}
+
+    {% if (is_creator or is_admin) and swp.status == 'pending' %}
+    <form method="post" action="{{ url_for('swp.recall', swp_id=swp.id) }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn-secondary">Recall to Draft</button>
+    </form>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% if show %}
+<div style="margin-top:.75rem;">
+  <div class="field" style="max-width:420px;">
+    <label for="backdate_note">Source / Reference</label>
+    <input type="text" name="backdate_note" id="backdate_note"
+           value="{{ note_value }}"
+           placeholder="e.g. Paper permit #, binder location, date range…">
+  </div>
+  <p class="historical-hint">
+    This record will be marked <strong>Closed</strong> and tagged as a historical entry.
+    Set the permit date to match the original document.
+  </p>
+</div>
+{% endif %}

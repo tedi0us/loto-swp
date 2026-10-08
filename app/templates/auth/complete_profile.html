@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Complete Your Profile — LOTO / SWP{% endblock %}
+
+{% block content %}
+<div class="login-wrap">
+  <div class="login-card" style="max-width:440px;">
+    <h1>Complete Your Profile</h1>
+    <p class="subtitle">Please fill in your details before continuing.</p>
+
+    <form method="post" action="{{ url_for('auth.complete_profile') }}" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="field-row">
+        <div class="field">
+          {{ form.first_name.label }}
+          {{ form.first_name(autofocus=true) }}
+          {% for e in form.first_name.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+        </div>
+        <div class="field">
+          {{ form.last_name.label }}
+          {{ form.last_name() }}
+          {% for e in form.last_name.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+        </div>
+      </div>
+
+      <div class="field">
+        {{ form.email.label }}
+        {{ form.email(type="email", autocomplete="email") }}
+        {% for e in form.email.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+      </div>
+
+      <div class="field">
+        {{ form.phone.label }}
+        {{ form.phone(autocomplete="tel", placeholder="+15551234567") }}
+        <small class="field-hint">E.164 format required for SMS — include country code, e.g. +15551234567</small>
+        {% for e in form.phone.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+      </div>
+
+      <div class="field">
+        {{ form.title.label }}
+        {{ form.title(placeholder="e.g. Field Technician, Site Supervisor") }}
+        {% for e in form.title.errors %}<span class="field-error">{{ e }}</span>{% endfor %}
+      </div>
+
+      <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.5rem;">
+        {{ form.notify_sms(id="notify_sms", style="width:14px;height:14px;margin:0;cursor:pointer;") }}
+        <label for="notify_sms" style="margin:0;font-weight:normal;font-size:.9rem;cursor:pointer;">
+          {{ form.notify_sms.label.text }}
+        </label>
+      </div>
+
+      <button type="submit" class="btn-primary">Save Profile</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

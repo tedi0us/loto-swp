@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if equipment else 'Add' }} Equipment — LOTO / SWP{% endblock %}
+
+{% block content %}
+<div class="form-page">
+  <div class="form-header">
+    <a href="{{ url_for('equipment.index') }}" class="back-link">← Equipment</a>
+    <h2>{{ 'Edit Equipment' if equipment else 'Add Equipment' }}</h2>
+    {% if equipment %}
+    <span class="badge {% if equipment.active %}badge-ok{% else %}badge-logout{% endif %}">
+      {{ equipment.tag_id }}
+    </span>
+    {% endif %}
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% for cat, msg in messages %}
+  <div class="alert alert-{{ 'error' if cat == 'error' else 'info' }}" style="margin-bottom:1rem;">{{ msg }}</div>
+  {% endfor %}
+  {% endwith %}
+
+  <div class="form-card">
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="field-row">
+        <div class="field" style="max-width:160px;">
+          {{ form.plant.label }}
+          {{ form.plant(class="select-field") }}
+          {% for err in form.plant.errors %}
+          <span class="field-error">{{ err }}</span>
+          {% endfor %}
+        </div>
+        <div class="field">
+          {{ form.process_name.label }}
+          {{ form.process_name(placeholder="e.g. Feed Pump A", id="equip-process-name") }}
+          {% for err in form.process_name.errors %}
+          <span class="field-error">{{ err }}</span>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% if equipment %}
+      <div class="field">
+        <label>Tag ID</label>
+        <input type="text" value="{{ equipment.tag_id }}" disabled class="equip-tag-preview"
+               style="color:var(--text);font-style:normal;">
+        <p style="font-size:.8rem;color:var(--muted);margin-top:.3rem;">
+          Tag is regenerated automatically from Plant + Process Name on save.
+        </p>
+      </div>
+      {% else %}
+      <div class="field">
+        <label>Tag ID Preview</label>
+        <input type="text" id="equip-tag-preview" disabled class="equip-tag-preview" placeholder="Auto-generated">
+      </div>
+      {% endif %}
+
+      <div class="field-row">
+        <div class="field">
+          {{ form.make.label }}
+          {{ form.make(placeholder="e.g. Grundfos") }}
+        </div>
+        <div class="field">
+          {{ form.model.label }}
+          {{ form.model(placeholder="e.g. CM5-6") }}
+        </div>
+      </div>
+
+      <div class="field">
+        {{ form.location.label }}
+        {{ form.location(placeholder="Building / Area") }}
+      </div>
+
+      <div class="field">
+        {{ form.notes.label }}
+        {{ form.notes(rows=3, placeholder="Additional notes…",
+                     style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:.55rem .75rem;font-size:.9rem;color:var(--text);outline:none;width:100%;resize:vertical;font-family:var(--font);") }}
+      </div>
+
+      <div class="field" style="flex-direction:row;align-items:center;gap:.5rem;">
+        {{ form.active() }}
+        {{ form.active.label }}
+      </div>
+
+      <div class="form-actions">
+        <a href="{{ url_for('equipment.index') }}" class="btn-secondary">Cancel</a>
+        <button type="submit" class="btn-primary" style="width:auto;">
+          {{ 'Save Changes' if equipment else 'Add Equipment' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='equipment.js') }}" defer></script>
+{% endblock %}

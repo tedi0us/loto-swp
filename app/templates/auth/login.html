@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Sign In — LOTO / SWP{% endblock %}
+
+{% block content %}
+<div class="login-wrap">
+  <div class="login-card">
+    <h1>LOTO / SWP</h1>
+    <p class="subtitle">Safe Work Permit Management</p>
+
+    <form method="post" action="{{ url_for('auth.login') }}" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="field">
+        {{ form.username.label }}
+        {{ form.username(autocomplete="username", autofocus=true) }}
+        {% for error in form.username.errors %}
+          <span class="field-error">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <div class="field">
+        {{ form.password.label }}
+        {{ form.password(autocomplete="current-password") }}
+        {% for error in form.password.errors %}
+          <span class="field-error">{{ error }}</span>
+        {% endfor %}
+      </div>
+
+      <button type="submit" class="btn-primary">Sign In</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

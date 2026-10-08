@@ -1,0 +1,10 @@
+flask
+flask-login
+flask-wtf
+flask-limiter
+argon2-cffi
+email-validator
+gunicorn
+openpyxl
+pypdf
+twilio

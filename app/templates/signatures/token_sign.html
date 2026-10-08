@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Sign Permit — LOTO / SWP{% endblock %}
+{% block content %}
+<div style="max-width:36rem;margin:2rem auto;padding:0 1rem">
+
+  <div style="text-align:center;margin-bottom:1.5rem">
+    <h1 style="margin-bottom:.25rem">Signature Request</h1>
+    <p class="muted">{{ row.signature_role | replace('_',' ') | title }}</p>
+  </div>
+
+  <div class="card" style="margin-bottom:1.25rem">
+    <h2 class="section-title">
+      {{ row.permit_type | upper }}
+      {% if row.permit_type == 'swp' %}{{ permit.permit_number or ('SWP #' ~ permit.id) }}
+      {% else %}{{ permit.loto_number or ('LOTO #' ~ permit.id) }}{% endif %}
+    </h2>
+    <dl class="detail-grid">
+      {% if row.permit_type == 'swp' %}
+        <dt>Date</dt>        <dd>{{ permit.date or '—' }}</dd>
+        <dt>Location</dt>    <dd>{{ permit.location or '—' }}</dd>
+        <dt>Work Lead</dt>   <dd>{{ permit.work_lead or '—' }}</dd>
+        <dt>Scope</dt>       <dd>{{ permit.scope_of_work or '—' }}</dd>
+        <dt>Status</dt>      <dd><span class="badge badge-swp-{{ permit.status }}">{{ permit.status | title }}</span></dd>
+      {% else %}
+        <dt>Date</dt>           <dd>{{ permit.date or '—' }}</dd>
+        <dt>Location</dt>       <dd>{{ permit.location or '—' }}</dd>
+        <dt>Group Leader</dt>   <dd>{{ permit.group_leader or '—' }}</dd>
+        <dt>Job Description</dt><dd>{{ permit.job_description or '—' }}</dd>
+        <dt>Status</dt>         <dd><span class="badge badge-loto-{{ permit.status }}">{{ permit.status | title }}</span></dd>
+      {% endif %}
+    </dl>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}" style="margin-bottom:1rem">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="card">
+    <p style="margin-bottom:1rem">
+      By typing your full name below you confirm that you have reviewed the permit
+      details above and apply your digital signature.
+    </p>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field" style="margin-bottom:1rem">
+        <label for="signature_data" style="display:block;margin-bottom:.35rem;font-weight:600">
+          Full Name
+        </label>
+        <input type="text" id="signature_data" name="signature_data"
+               placeholder="{{ row.recipient_name }}"
+               autocomplete="name"
+               style="width:100%" required>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%">
+        Apply Signature
+      </button>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

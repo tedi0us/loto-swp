@@ -1,0 +1,18 @@
+<tr>
+  <td class="td-num">{{ idx + 1 }}</td>
+  <td>
+    <select name="entry_type_{{ idx }}">
+      <option value="stop">Stop</option>
+      <option value="restart">Restart</option>
+    </select>
+  </td>
+  <td><input type="text" name="date_{{ idx }}"     maxlength="32"></td>
+  <td><input type="text" name="time_{{ idx }}"     maxlength="32"></td>
+  <td><input type="text" name="wl_phone_{{ idx }}" maxlength="32"></td>
+  <td><input type="text" name="wl_name_{{ idx }}"  maxlength="128"></td>
+  <td><input type="text" name="wl_sig_{{ idx }}"   maxlength="128"></td>
+  <td><input type="text" name="auth_name_{{ idx }}" maxlength="128"></td>
+  <td><input type="text" name="auth_sig_{{ idx }}"  maxlength="128"></td>
+  <td><input type="text" name="comments_{{ idx }}"  maxlength="256"></td>
+</tr>
+<input type="hidden" id="next-cycle-idx" name="cycle_idx" value="{{ idx + 1 }}" hx-swap-oob="true">

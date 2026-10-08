@@ -1,0 +1,395 @@
+{% extends "base.html" %}
+{% from "equipment/macros.html" import equip_display %}
+{% block title %}{{ 'Edit' if swp else 'New' }} SWP + LOTO — LOTO / SWP{% endblock %}
+
+{% block content %}
+<div class="swp-form">
+  <div class="form-header">
+    <a href="{{ url_for('main.dashboard') }}" class="back-link">← Dashboard</a>
+    <div style="display:flex;align-items:center;gap:.75rem">
+      <h2>{{ 'Edit' if swp else 'New' }} SWP + LOTO</h2>
+      {% if swp %}<span class="badge badge-{{ swp.status }}">SWP: {{ swp.status | title }}</span>{% endif %}
+      {% if loto %}<span class="badge badge-loto-{{ loto.status }}">LOTO: {{ loto.status | title }}</span>{% endif %}
+    </div>
+    <span id="save-indicator" class="save-indicator"></span>
+  </div>
+
+  {% if not swp %}
+  <div class="alert alert-info draft-notice" style="margin-bottom:1rem;">
+    This form auto-saves as you go. Drafts not submitted within 48 hours are permanently deleted.
+  </div>
+  {% endif %}
+
+  <form method="post" novalidate
+        hx-post="{{ url_for('combined.autosave') }}"
+        hx-trigger="change, input delay:1000ms"
+        hx-include="this"
+        hx-target="#save-indicator"
+        hx-swap="outerHTML">
+    {{ swp_form.hidden_tag() }}
+    <input type="hidden" id="swp-id-field"  name="swp_id"  value="{{ swp.id  if swp  else '' }}">
+    <input type="hidden" id="loto-id-field" name="loto_id" value="{{ loto.id if loto else '' }}">
+
+    {# ── Common Information ───────────────────────────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">Common Information</h3>
+      <div class="swp-grid-3">
+        <div class="field" style="max-width:200px;">
+          {{ swp_form.plant.label }}
+          {{ swp_form.plant(class="select-field") }}
+        </div>
+        <div class="field">{{ swp_form.date.label }}{{ swp_form.date(type="date") }}</div>
+        <div class="field">{{ swp_form.time.label }}{{ swp_form.time(type="time") }}</div>
+        <div class="field">{{ swp_form.location.label }}{{ swp_form.location() }}</div>
+        <div class="field">{{ swp_form.company.label }}{{ swp_form.company() }}</div>
+        <div class="field">
+          <label for="work_lead">Work Lead / Group Leader</label>
+          <select name="work_lead" id="work_lead" class="select-field">
+            <option value="">— Select —</option>
+            <optgroup label="Staff">
+              {% for name in staff_names %}
+              <option value="{{ name }}" {{ 'selected' if swp_form.work_lead.data == name }}>{{ name }}</option>
+              {% endfor %}
+            </optgroup>
+            {% if contractor_choices %}
+            <optgroup label="Contractors">
+              {% for name, label in contractor_choices %}
+              <option value="{{ name }}" {{ 'selected' if swp_form.work_lead.data == name }}>{{ label }}</option>
+              {% endfor %}
+            </optgroup>
+            {% endif %}
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin-top:.5rem">
+        <label for="scope_of_work">Scope of Work / Job Description</label>
+        {{ swp_form.scope_of_work(rows=3, id="scope_of_work") }}
+      </div>
+    </div>
+
+    {# ── Equipment (shared) ───────────────────────────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">Equipment</h3>
+
+      {{ equip_display(cur_equip, swp_form.plant.data or '') }}
+
+      <div id="equip-work-log-fields" style="{{ '' if cur_equip else 'display:none;' }}margin-top:.75rem;">
+        <div class="field">
+          <label>Work Description</label>
+          <textarea name="equip_comments" rows="2"
+                    placeholder="What is being done to this equipment on this job…"
+                    style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:.55rem .75rem;font-size:.9rem;color:var(--text);outline:none;width:100%;resize:vertical;font-family:var(--font);">{{ work_log.comments if work_log else '' }}</textarea>
+        </div>
+        <div class="swp-grid-3" style="margin-top:.25rem;">
+          <div class="field">
+            <label>Start Date</label>
+            <input type="date" name="equip_start_date" value="{{ work_log.start_date if work_log else '' }}">
+          </div>
+          <div class="field">
+            <label>End Date</label>
+            <input type="date" name="equip_end_date" value="{{ work_log.end_date if work_log else '' }}">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# ── Historical Record (shared toggle) ────────────────────────────────── #}
+    <div class="swp-section">
+      <label class="check-item" style="font-size:.95rem;color:var(--text);">
+        <input type="checkbox" name="is_backdated" id="is_historical" value="y"
+               {{ 'checked' if (swp_form.is_backdated.data or loto_form.is_historical.data) }}>
+        <span>This is a historical record (entered from paper)</span>
+      </label>
+      <div id="historical-fields" style="margin-top:.75rem;">
+        <div class="swp-grid-2">
+          <div class="field">
+            {{ swp_form.backdate_note.label }}
+            {{ swp_form.backdate_note(placeholder="e.g. Paper permit #, binder location, date range…") }}
+          </div>
+          <div class="field">
+            {{ swp_form.permit_number.label }}
+            {{ swp_form.permit_number(placeholder="Original permit # if known") }}
+          </div>
+        </div>
+        <p class="historical-hint">
+          SWP will be marked <strong>Closed</strong> and LOTO will be marked <strong>Released</strong>.
+          Set the date to match the original document.
+        </p>
+      </div>
+    </div>
+
+    {# ── SWP: Pre-Job Safety ──────────────────────────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">Pre-Job Safety</h3>
+      <div class="swp-grid-2">
+        <div class="field">{{ swp_form.first_time.label }}{{ swp_form.first_time(class="select-field") }}</div>
+        <div class="field">{{ swp_form.training.label }}{{ swp_form.training(class="select-field") }}</div>
+        <div class="field">{{ swp_form.inspection.label }}{{ swp_form.inspection(class="select-field") }}</div>
+        <div class="field">{{ swp_form.continuation.label }}{{ swp_form.continuation(class="select-field") }}</div>
+      </div>
+    </div>
+
+    {# ── SWP: Hazard Energy Types ─────────────────────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">Hazard Energy Types</h3>
+      <div class="check-grid">
+        {% for field in [swp_form.he_electrical, swp_form.he_mechanical, swp_form.he_thermal,
+                         swp_form.he_pressure, swp_form.he_motion, swp_form.he_gravity,
+                         swp_form.he_chemical, swp_form.he_radiation, swp_form.he_biological, swp_form.he_noise] %}
+        <label class="check-item">{{ field() }}<span>{{ field.label.text }}</span></label>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# ── SWP: PPE Required ────────────────────────────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">PPE Required</h3>
+      <div class="check-grid">
+        {% for field in [swp_form.ppe_hard_hat, swp_form.ppe_safety_glasses, swp_form.ppe_gloves,
+                         swp_form.ppe_fr_clothing, swp_form.ppe_arc_flash_suit, swp_form.ppe_arc_flash_hood,
+                         swp_form.ppe_insul_gloves, swp_form.ppe_face_shield, swp_form.ppe_hearing_prot,
+                         swp_form.ppe_respirator, swp_form.ppe_safety_shoes, swp_form.ppe_fall_protect,
+                         swp_form.ppe_cut_protect, swp_form.ppe_welding_hood, swp_form.ppe_brine_gear,
+                         swp_form.ppe_chem_res_cloth, swp_form.ppe_chem_res_gloves, swp_form.ppe_chem_res_boot] %}
+        <label class="check-item">{{ field() }}<span>{{ field.label.text }}</span></label>
+        {% endfor %}
+        {% set _has_ppe2 = swp_form.ppe_other2.data or swp_form.ppe_other2_txt.data %}
+        <div style="grid-column:span 2;display:flex;align-items:center;gap:.5rem;">
+          <label class="check-item check-with-text" style="flex:1;min-width:0;">
+            {{ swp_form.ppe_other1() }}<span>Other:</span>
+            {{ swp_form.ppe_other1_txt(placeholder="Specify") }}
+          </label>
+          <button type="button" class="btn-link" id="ppe-add-other-btn"
+                  style="white-space:nowrap;flex-shrink:0;{{ 'display:none;' if _has_ppe2 }}"
+                  hx-get="{{ url_for('swp.other_row', section='ppe', checked=('1' if swp_form.ppe_other2.data else '0'), txt=(swp_form.ppe_other2_txt.data or '')) }}"
+                  hx-target="#ppe-other2-slot"
+                  hx-swap="outerHTML"
+                  {{ 'hx-trigger="load, click"' if _has_ppe2 }}>+ Add another Other</button>
+        </div>
+        <label id="ppe-other2-slot" class="check-item check-with-text" style="display:none;grid-column:span 2;"></label>
+      </div>
+    </div>
+
+    {# ── SWP: Task Hazard Assessment ──────────────────────────────────────── #}
+    {{ swp_form.permit_hot_work(type="hidden") }}
+    {{ swp_form.permit_electrical(type="hidden") }}
+    {{ swp_form.permit_confined_sp(type="hidden") }}
+    {{ swp_form.permit_excavation(type="hidden") }}
+    {{ swp_form.permit_other(type="hidden") }}
+    <div class="swp-section">
+      <h3 class="section-title">Task Hazard Assessment</h3>
+      <div class="check-grid">
+        <label class="check-item">
+          <input type="checkbox" name="tha_loto" value="y" checked disabled>
+          <input type="hidden" name="tha_loto" value="y">
+          <span>LOTO</span>
+        </label>
+        {% for field in [swp_form.tha_confined_space, swp_form.tha_elevated_work,
+                         swp_form.tha_hot_work, swp_form.tha_vehicles, swp_form.tha_mobile_equip,
+                         swp_form.tha_heavy_equip, swp_form.tha_power_tools, swp_form.tha_slips_trips,
+                         swp_form.tha_nip_pinch, swp_form.tha_break_sys_integ, swp_form.tha_ergonomics,
+                         swp_form.tha_extreme_heat, swp_form.tha_extreme_cold, swp_form.tha_high_wind,
+                         swp_form.tha_rain_snow] %}
+        <label class="check-item">{{ field() }}<span>{{ field.label.text }}</span></label>
+        {% endfor %}
+        <label class="check-item check-with-text">
+          {{ swp_form.tha_other() }}<span>Other:</span>
+          {{ swp_form.tha_other_txt(placeholder="Specify") }}
+        </label>
+      </div>
+    </div>
+
+    {# ── SWP: Task Safeguards ─────────────────────────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">Task Safeguards</h3>
+      <div class="check-grid">
+        {% for field in [swp_form.ts_review_procedures, swp_form.ts_valve_positions, swp_form.ts_cross_connects,
+                         swp_form.ts_barricade, swp_form.ts_adjacent_work, swp_form.ts_haz_comm,
+                         swp_form.ts_addl_permits, swp_form.ts_equip_inspect, swp_form.ts_high_temp_lines,
+                         swp_form.ts_min_approach, swp_form.ts_safety_observer, swp_form.ts_slings_lifting] %}
+        <label class="check-item">{{ field() }}<span>{{ field.label.text }}</span></label>
+        {% endfor %}
+        {% set _has_ts2 = swp_form.ts_other2.data or swp_form.ts_other2_txt.data %}
+        <div style="grid-column:span 2;display:flex;align-items:center;gap:.5rem;">
+          <label class="check-item check-with-text" style="flex:1;min-width:0;">
+            {{ swp_form.ts_other1() }}<span>Other:</span>
+            {{ swp_form.ts_other1_txt(placeholder="Specify") }}
+          </label>
+          <button type="button" class="btn-link" id="ts-add-other-btn"
+                  style="white-space:nowrap;flex-shrink:0;{{ 'display:none;' if _has_ts2 }}"
+                  hx-get="{{ url_for('swp.other_row', section='ts', checked=('1' if swp_form.ts_other2.data else '0'), txt=(swp_form.ts_other2_txt.data or '')) }}"
+                  hx-target="#ts-other2-slot"
+                  hx-swap="outerHTML"
+                  {{ 'hx-trigger="load, click"' if _has_ts2 }}>+ Add another Other</button>
+        </div>
+        <label id="ts-other2-slot" class="check-item check-with-text" style="display:none;grid-column:span 2;"></label>
+      </div>
+    </div>
+
+    {# ── SWP: Mitigation & Comments ───────────────────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">Mitigation &amp; Comments</h3>
+      <div class="field">{{ swp_form.hazard_mitigation.label }}{{ swp_form.hazard_mitigation(rows=3) }}</div>
+      <div class="field" style="margin-top:.75rem">{{ swp_form.additional_comments.label }}{{ swp_form.additional_comments(rows=3) }}</div>
+    </div>
+
+    {# ── SWP: Attendees ───────────────────────────────────────────────────── #}
+    <datalist id="person-list">
+      {% for name in staff_names %}<option value="{{ name }}">{% endfor %}
+      {% for name, label in contractor_choices %}<option value="{{ name }}">{% endfor %}
+    </datalist>
+    <div class="swp-section">
+      <h3 class="section-title">Attendees</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:2rem">#</th>
+              <th>Name</th>
+              <th>Company</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="attendee-body">
+            {% for i in range(attendee_count) %}
+            {% set a = attendees_by_pos.get(i) %}
+            <tr>
+              <td class="td-num">{{ i + 1 }}</td>
+              <td><input type="text" name="attend_name_{{ i }}" class="td-input"
+                         list="person-list"
+                         value="{{ a.name if a else '' }}" placeholder="Full name"></td>
+              <td><input type="text" name="attend_company_{{ i }}" class="td-input"
+                         value="{{ a.company if a else '' }}" placeholder="Company"></td>
+              <td><input type="date" name="attend_date_{{ i }}" class="td-input"
+                         value="{{ a.date if a else '' }}"></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <input type="hidden" id="next-row-idx" name="idx" value="{{ attendee_count }}">
+      <button type="button" class="btn-secondary" style="margin-top:.75rem;width:auto;"
+              hx-get="{{ url_for('swp.attendee_row') }}"
+              hx-include="#next-row-idx"
+              hx-target="#attendee-body"
+              hx-swap="beforeend">
+        + Add Row
+      </button>
+    </div>
+
+    {# ── LOTO: Equipment Details ──────────────────────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">LOTO — Equipment Details</h3>
+      <div class="swp-grid-3">
+        <div class="field">
+          {{ loto_form.equipment_id.label }}
+          {{ loto_form.equipment_id(id="equipment_id", placeholder="Tag / Asset ID") }}
+        </div>
+        <div class="field" style="grid-column:span 2;">
+          {{ loto_form.equipment_description.label }}
+          {{ loto_form.equipment_description(id="equipment_description", placeholder="e.g. Pump 1A — Brine Feed") }}
+        </div>
+      </div>
+    </div>
+
+    {# ── LOTO: Part II — Isolation Boundary Points ────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">LOTO Part II — Isolation Boundary Points</h3>
+      <p style="font-size:.82rem;color:var(--muted);margin-bottom:.75rem;">
+        42 boundary points. <em>Installed By</em> and <em>Verified By</em> are signed on the printed form.
+      </p>
+      <div class="table-wrap">
+        <table class="loto-boundary-table">
+          <thead>
+            <tr>
+              <th style="width:2rem">#</th>
+              <th style="min-width:120px">Equipment / Tag</th>
+              <th style="min-width:110px">Location</th>
+              <th style="min-width:100px">Energy Type</th>
+              <th style="min-width:120px">Isolation Device</th>
+              <th style="min-width:90px">Position</th>
+              <th style="min-width:105px">Installed By</th>
+              <th style="min-width:105px">Verified By</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pos in range(1, 43) %}
+            {% set b = boundaries_by_pos.get(pos) %}
+            <tr>
+              <td class="td-num">{{ pos }}</td>
+              <td><input type="text" name="b_equipment_{{ pos }}" class="td-input"
+                         value="{{ b.equipment if b else '' }}" placeholder="Tag / Equip ID"></td>
+              <td><input type="text" name="b_location_{{ pos }}" class="td-input"
+                         value="{{ b.location if b else '' }}" placeholder="Area / Panel"></td>
+              <td><input type="text" name="b_energy_type_{{ pos }}" class="td-input"
+                         value="{{ b.energy_type if b else '' }}" placeholder="Electrical…"></td>
+              <td><input type="text" name="b_isolation_device_{{ pos }}" class="td-input"
+                         value="{{ b.isolation_device if b else '' }}" placeholder="Breaker / Valve…"></td>
+              <td><input type="text" name="b_device_position_{{ pos }}" class="td-input"
+                         value="{{ b.device_position if b else '' }}" placeholder="Locked / Off"></td>
+              <td><input type="text" class="td-input sig-line" disabled placeholder="— paper —"></td>
+              <td><input type="text" class="td-input sig-line" disabled placeholder="— paper —"></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {# ── LOTO: Part III — Group Lock Verification ─────────────────────────── #}
+    <div class="swp-section">
+      <h3 class="section-title">LOTO Part III — Group Lock Verification</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:2rem">#</th>
+              <th>Name</th>
+              <th>Date</th>
+              <th>Signature</th>
+            </tr>
+          </thead>
+          <tbody id="verifier-body">
+            {% for i in range(verifier_count) %}
+            {% set v = verifiers_by_pos.get(i) %}
+            <tr id="verifier-row-{{ i }}">
+              <td class="td-num">{{ i + 1 }}</td>
+              <td>
+                <input type="text" name="v_name_{{ i }}" class="td-input"
+                       list="person-list"
+                       value="{{ v.name if v else '' }}" placeholder="Full name">
+              </td>
+              <td><input type="date" name="v_date_{{ i }}" class="td-input"
+                         value="{{ v.date if v else '' }}"></td>
+              <td><input type="text" class="td-input sig-line" disabled placeholder="— paper —"></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <input type="hidden" id="next-verifier-idx" name="idx" value="{{ verifier_count }}">
+      <button type="button" class="btn-secondary" style="margin-top:.75rem;width:auto;"
+              hx-get="{{ url_for('loto.verifier_row') }}"
+              hx-include="#next-verifier-idx"
+              hx-target="#verifier-body"
+              hx-swap="beforeend">
+        + Add Row
+      </button>
+    </div>
+  </form>
+
+  {# ── Form Actions — outside main form so nested action forms are valid ─── #}
+  <div id="form-actions" class="form-actions">
+    <a href="{{ url_for('main.dashboard') }}" class="btn-secondary">Cancel</a>
+    {% if swp and loto %}
+    <a href="{{ url_for('swp.review', swp_id=swp.id) }}" class="btn-secondary" style="width:auto;">Review SWP →</a>
+    <a href="{{ url_for('loto.edit', loto_id=loto.id) }}" class="btn-secondary" style="width:auto;">Edit LOTO →</a>
+    {% else %}
+    <span class="btn-primary btn-disabled" style="width:auto;"
+          title="Fill out a field to enable auto-save first">Review &amp; Submit</span>
+    {% endif %}
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='forms.js') }}" defer></script>
+{% endblock %}

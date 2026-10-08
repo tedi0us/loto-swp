@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Equipment — LOTO / SWP{% endblock %}
+
+{% block content %}
+<div class="logs">
+  <div class="logs-header">
+    <h2>Equipment</h2>
+    <a href="{{ url_for('equipment.add') }}" class="btn-primary" style="width:auto;">+ Add Equipment</a>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Tag ID</th>
+          <th>Process Name</th>
+          <th>Plant</th>
+          <th>Make</th>
+          <th>Model</th>
+          <th>Location</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for eq in equipment %}
+        <tr>
+          <td class="td-mono">{{ eq.tag_id }}</td>
+          <td>{{ eq.process_name }}</td>
+          <td>{{ eq.plant }}</td>
+          <td>{{ eq.make or '—' }}</td>
+          <td>{{ eq.model or '—' }}</td>
+          <td>{{ eq.location or '—' }}</td>
+          <td>
+            {% if eq.active %}
+            <span class="badge badge-ok">Active</span>
+            {% else %}
+            <span class="badge badge-logout">Inactive</span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{{ url_for('equipment.edit_record', equip_id=eq.id) }}" class="badge badge-login" preload="mouseover">Edit</a>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" style="text-align:center;color:var(--muted);padding:2rem;">
+            No equipment records yet.
+            <a href="{{ url_for('equipment.add') }}" style="color:var(--border-lt)">Add one →</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if contractor else 'Add' }} Contractor — LOTO / SWP{% endblock %}
+
+{% block content %}
+<div class="form-page">
+  <div class="form-header">
+    <a href="{{ url_for('contractors.index') }}" class="back-link">← Contractors</a>
+    <h2>{{ 'Edit Contractor' if contractor else 'Add Contractor' }}</h2>
+  </div>
+
+  <div class="form-card">
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="field-row">
+        <div class="field">
+          {{ form.name.label }}
+          {{ form.name(placeholder="Full name") }}
+          {% for err in form.name.errors %}
+          <span class="field-error">{{ err }}</span>
+          {% endfor %}
+        </div>
+        <div class="field">
+          {{ form.company.label }}
+          {{ form.company(placeholder="Company name") }}
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          {{ form.title.label }}
+          {{ form.title(placeholder="Job title") }}
+        </div>
+        <div class="field">
+          {{ form.phone.label }}
+          {{ form.phone(placeholder="Phone number") }}
+        </div>
+      </div>
+
+      <div class="field">
+        {{ form.email.label }}
+        {{ form.email(placeholder="Email address") }}
+      </div>
+
+      <div class="field" style="flex-direction:row; align-items:center; gap:.5rem;">
+        {{ form.active() }}
+        {{ form.active.label }}
+      </div>
+
+      <div class="form-actions">
+        <a href="{{ url_for('contractors.index') }}" class="btn-secondary">Cancel</a>
+        <button type="submit" class="btn-primary" style="width:auto;">
+          {{ 'Save Changes' if contractor else 'Add Contractor' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

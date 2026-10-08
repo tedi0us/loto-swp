@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — LOTO / SWP{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+  <div class="dashboard-header">
+    <div>
+      <h2>Dashboard</h2>
+      <p class="dashboard-welcome">Welcome back, {{ current_user.display_name() }}</p>
+    </div>
+    {% set r = current_user.role %}
+    <span class="role-badge role-badge-{{ r }}">
+      {%- if r == 'ei_c' %}EI&amp;C{%- elif r == 'it_admin' %}IT Admin{%- elif r == 'admin' %}Management{%- else %}{{ r | title }}{%- endif -%}
+    </span>
+  </div>
+
+  {% set is_view_only = current_user.role in ('mechanic', 'ei_c') %}
+  <div class="card-grid">
+
+    {% if not is_view_only %}
+    <a href="{{ url_for('swp.index') }}" class="card" preload="mouseover">
+      <div class="card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+      </div>
+      <h3>SWP</h3>
+    </a>
+    {% endif %}
+
+    <a href="{{ url_for('loto.index') }}" class="card" preload="mouseover">
+      <div class="card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+      <h3>LOTO</h3>
+    </a>
+
+    {% if not is_view_only %}
+    <a href="{{ url_for('combined.new') }}" class="card" preload="mouseover">
+      <div class="card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <rect x="3" y="11" width="7" height="7" rx="1" ry="1"/>
+          <path d="M5 11V9a2 2 0 0 1 4 0v2"/>
+        </svg>
+      </div>
+      <h3>SWP / LOTO</h3>
+    </a>
+    {% endif %}
+
+    {% if pending_sig_count %}
+    <a href="{{ url_for('signatures.index') }}" class="card card-highlight" preload="mouseover">
+      <div class="card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 20h9"/>
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+        </svg>
+      </div>
+      <h3>My Signatures <span class="badge badge-warn">{{ pending_sig_count }}</span></h3>
+    </a>
+    {% endif %}
+
+    {% if current_user.role in ('operator', 'admin', 'it_admin') %}
+    <a href="{{ url_for('contractors.index') }}" class="card" preload="mouseover">
+      <div class="card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <h3>Contractors</h3>
+    </a>
+    {% endif %}
+
+    {% if current_user.role in ('admin', 'it_admin', 'mechanic', 'ei_c') %}
+    <a href="{{ url_for('equipment.index') }}" class="card" preload="mouseover">
+      <div class="card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+          <path d="M12 2v2M12 20v2M2 12h2M20 12h2"/>
+        </svg>
+      </div>
+      <h3>Equipment</h3>
+    </a>
+    {% endif %}
+
+    {% if current_user.is_it_admin() %}
+    <a href="{{ url_for('users.index') }}" class="card" preload="mouseover">
+      <div class="card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      </div>
+      <h3>User Management</h3>
+    </a>
+
+    <a href="{{ url_for('main.logs') }}" class="card" preload="mouseover">
+      <div class="card-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <line x1="8" y1="6" x2="21" y2="6"/>
+          <line x1="8" y1="12" x2="21" y2="12"/>
+          <line x1="8" y1="18" x2="21" y2="18"/>
+          <line x1="3" y1="6" x2="3.01" y2="6"/>
+          <line x1="3" y1="12" x2="3.01" y2="12"/>
+          <line x1="3" y1="18" x2="3.01" y2="18"/>
+        </svg>
+      </div>
+      <h3>Audit Log</h3>
+    </a>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

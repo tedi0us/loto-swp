@@ -1,0 +1,11 @@
+<span id="save-indicator" class="save-indicator save-ok">Saved</span>
+<input type="hidden" id="loto-id-field" name="loto_id" value="{{ loto_id }}" hx-swap-oob="true">
+<div id="form-actions" class="form-actions" hx-swap-oob="true">
+  <a href="{{ url_for('loto.index') }}" class="btn-secondary">Cancel</a>
+  {% if loto and not loto.is_historical %}
+  <form method="post" action="{{ url_for('loto.activate', loto_id=loto_id) }}" style="display:contents">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn-primary" style="width:auto;">Activate LOTO</button>
+  </form>
+  {% endif %}
+</div>

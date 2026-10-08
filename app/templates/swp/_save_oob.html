@@ -1,0 +1,11 @@
+<span id="save-indicator" class="save-indicator save-ok">Saved</span>
+<input type="hidden" id="swp-id-field" name="swp_id" value="{{ swp_id }}" hx-swap-oob="true">
+<div id="form-actions" class="form-actions" hx-swap-oob="true">
+  <a href="{{ url_for('swp.index') }}" class="btn-secondary">Cancel</a>
+  <a href="{{ url_for('swp.review', swp_id=swp_id) }}" class="btn-primary" style="width:auto;">Review &amp; Submit</a>
+</div>
+{% if is_new_save %}
+<div id="loto-create-nudge" hx-swap-oob="true" style="margin-top:.5rem;">
+  <a href="{{ url_for('loto.new', from_swp=swp_id) }}" class="btn-secondary" style="font-size:.82rem;padding:.3rem .7rem;">+ Create LOTO for this SWP</a>
+</div>
+{% endif %}

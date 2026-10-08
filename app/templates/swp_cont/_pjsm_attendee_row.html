@@ -1,0 +1,8 @@
+<tr>
+  <td class="td-num">{{ idx + 1 }}</td>
+  <td><input type="text" name="att_name_{{ idx }}"    maxlength="128"></td>
+  <td><input type="text" name="att_sig_{{ idx }}"     maxlength="128"></td>
+  <td><input type="text" name="att_company_{{ idx }}" maxlength="128"></td>
+  <td><input type="text" name="att_date_{{ idx }}"    maxlength="32"></td>
+</tr>
+<input type="hidden" id="next-att-idx" name="att_idx" value="{{ idx + 1 }}" hx-swap-oob="true">

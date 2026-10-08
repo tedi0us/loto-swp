@@ -1,0 +1,28 @@
+{% macro equip_display(cur_equip, plant) %}
+<div id="equip-selected-display" class="equip-selected {{ 'equip-has-selection' if cur_equip }}"
+     role="button" tabindex="0"
+     hx-get="{{ url_for('equipment.picker', plant=plant) }}"
+     hx-params="none"
+     hx-target="#equipment-dialog-body"
+     hx-swap="innerHTML">
+  <input type="hidden" name="equip_id" id="equip-id-val" value="{{ cur_equip.id if cur_equip else '' }}">
+  {% if cur_equip %}
+  <div class="equip-selected-info">
+    <span class="equip-tag">{{ cur_equip.tag_id }}</span>
+    <span class="equip-name">{{ cur_equip.process_name }}</span>
+    {% if cur_equip.make or cur_equip.model %}
+    <span class="equip-meta">{{ (cur_equip.make or '') ~ (' ' if cur_equip.make and cur_equip.model else '') ~ (cur_equip.model or '') }}</span>
+    {% endif %}
+  </div>
+  {% else %}
+  <span class="equip-placeholder">Select equipment…</span>
+  {% endif %}
+  <span class="equip-chevron">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+         fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  </span>
+</div>
+{% endmacro %}

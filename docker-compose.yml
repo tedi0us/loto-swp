@@ -1,0 +1,44 @@
+services:
+  app:
+    build:
+      context: .
+      network: host    # use host networking during build so pip can resolve DNS
+    image: loto-swp-toolkit
+    container_name: loto-swp
+    restart: unless-stopped
+    env_file:
+      - path: .env.production
+        required: false
+    expose:
+      - "8000"               # internal only — Traefik routes to this via proxy network
+    volumes:
+      - ./instance:/app/instance   # persists app.db and secret_key across restarts
+      - /var/run/cups/cups.sock:/var/run/cups/cups.sock  # host CUPS socket for direct printing
+    environment:
+      FLASK_ENV: production
+      GUNICORN_WORKERS: "2"
+      PRINTER_NAME: ""             # CUPS queue name; leave empty to disable printing
+      CUPS_SERVER: "/var/run/cups/cups.sock"
+      COMPANY_NAME: ""             # pre-fills the Company field on new permits
+      # SECRET_KEY: "replace-with-a-long-random-hex-string"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.loto.rule=Host(`loto.example.com`)"
+      - "traefik.http.routers.loto.entrypoints=websecure"
+      - "traefik.http.routers.loto.tls.certresolver=letsencrypt"
+      - "traefik.http.services.loto.loadbalancer.server.port=8000"
+    networks:
+      - proxy
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 512m
+    cpus: "1.0"
+
+networks:
+  proxy:
+    external: true    # created by the Traefik stack, not this repo

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}PJSM Continuation — SWP #{{ swp.permit_number or swp.id }}{% endblock %}
+{% block content %}
+<div class="page-header">
+  <nav class="breadcrumb">
+    <a href="{{ url_for('main.dashboard') }}">Dashboard</a> &rsaquo;
+    <a href="{{ url_for('swp.index') }}">Safe Work Permits</a> &rsaquo;
+    <a href="{{ url_for('swp.review', swp_id=swp.id) }}">SWP #{{ swp.permit_number or swp.id }}</a> &rsaquo;
+    PJSM Continuation
+  </nav>
+  <h2>SWP-02 — PJSM Continuation Sheet</h2>
+</div>
+
+<form id="cont-form"
+      hx-post="{{ url_for('swp_cont.pjsm_autosave', swp_id=swp.id) }}"
+      hx-trigger="change, input delay:1000ms"
+      hx-target="#save-indicator"
+      hx-swap="outerHTML">
+
+  <input type="hidden" id="cont-id-field" name="cont_id" value="{{ cont.id if cont else '' }}">
+
+  <span id="save-indicator" class="save-indicator"></span>
+
+  <div class="swp-section">
+    <h3 class="section-title">Continuation Details</h3>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="host_employee">Host Employee</label>
+        <input type="text" id="host_employee" name="host_employee" maxlength="128"
+               value="{{ cont.host_employee or '' }}">
+      </div>
+      <div class="form-group">
+        <label for="location">Location</label>
+        <input type="text" id="location" name="location" maxlength="128"
+               value="{{ cont.location or '' }}">
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="work_lead">Work Lead</label>
+        <input type="text" id="work_lead" name="work_lead" maxlength="128"
+               value="{{ cont.work_lead or '' }}">
+      </div>
+      <div class="form-group">
+        <label for="date_time">Date / Time</label>
+        <input type="text" id="date_time" name="date_time" maxlength="64"
+               value="{{ cont.date_time or '' }}">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="additional_comments">Additional Comments</label>
+      <textarea id="additional_comments" name="additional_comments" rows="3">{{ cont.additional_comments or '' }}</textarea>
+    </div>
+
+    <div class="form-group">
+      <label>
+        <input type="checkbox" name="further_continuation_req"
+               {% if cont and cont.further_continuation_req %}checked{% endif %}>
+        Further continuation required
+      </label>
+    </div>
+  </div>
+
+  <div class="swp-section">
+    <h3 class="section-title">Attendees</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:2rem">#</th>
+            <th>Name</th>
+            <th>Signature</th>
+            <th>Company</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="attendee-body">
+          {% for a in attendees %}
+          <tr>
+            <td class="td-num">{{ loop.index }}</td>
+            <td><input type="text" name="att_name_{{ loop.index0 }}" value="{{ a.name or '' }}" maxlength="128"></td>
+            <td><input type="text" name="att_sig_{{ loop.index0 }}"  value="{{ a.signature or '' }}" maxlength="128"></td>
+            <td><input type="text" name="att_company_{{ loop.index0 }}" value="{{ a.company or '' }}" maxlength="128"></td>
+            <td><input type="text" name="att_date_{{ loop.index0 }}"    value="{{ a.date or '' }}" maxlength="32"></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <input type="hidden" id="next-att-idx" name="att_idx" value="{{ attendees|length }}">
+    <button type="button" class="btn-secondary" style="margin-top:.5rem;width:auto;"
+            hx-get="{{ url_for('swp_cont.pjsm_attendee_row', swp_id=swp.id, cont_id=cont.id if cont else 0) }}"
+            hx-include="#next-att-idx"
+            hx-target="#attendee-body"
+            hx-swap="beforeend">
+      + Add Attendee
+    </button>
+  </div>
+
+</form>
+
+<div class="review-actions" style="margin-top:1.25rem;">
+  <a href="{{ url_for('swp.review', swp_id=swp.id) }}" class="btn-secondary">← Back to SWP</a>
+</div>
+{% endblock %}
